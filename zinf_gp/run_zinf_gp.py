@@ -87,7 +87,7 @@ def top_X(y_true, y_pred, X=10):
 
 
 def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None, iterations=None,
-              out_dir):
+              out_dir=None):
 
     result_dir = os.path.join(data_dir, 'results')
     mass_shapefile = os.path.join(data_dir, 'shapefiles', 'MA_2021')
@@ -179,10 +179,10 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
 
     if time=='qtr':
         timestep_col = 'qtr_since_2000'
-        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=3)[
-            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf_meta = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).mean()[
             ['theme_3_pc', 'lon', 'theme_2_pc', 'lat', 'svi_pctile', 'theme_1_pc', 'theme_4_pc']]
+        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=3)[
+            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf = deaths_gdf.merge(deaths_gdf_meta, left_index=True, right_index=True)
         deaths_gdf.loc[idx[:, :, :], 'last_timestep'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(1, )
         deaths_gdf.loc[idx[:, :, :], 'last_year'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(2)
@@ -191,16 +191,16 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
         for tract in tracts:
             deaths_gdf.loc[idx[tract, :, :], 'neighbors_last_timestep'] = \
                 deaths_gdf.loc[idx[neighbors[tract], :, :], 'last_timestep'].groupby(
-                    level=['season_since_2000', 'year']).mean().shift(1).values
+                    level=[timestep_col, 'year']).mean().shift(1).values
             deaths_gdf.loc[idx[tract, :, :], 'neighbors_last_year'] = \
                 deaths_gdf.loc[idx[neighbors[tract], :, :], 'last_year'].groupby(
-                    level=['season_since_2000', 'year']).mean().shift(4).values
+                    level=[timestep_col, 'year']).mean().shift(4).values
     elif time=='biannual':
         timestep_col = 'season_since_2000'
-        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=6)[
-            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf_meta = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).mean()[
             ['theme_3_pc', 'lon', 'theme_2_pc', 'lat', 'svi_pctile', 'theme_1_pc', 'theme_4_pc']]
+        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=6)[
+            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf = deaths_gdf.merge(deaths_gdf_meta, left_index=True, right_index=True)
         deaths_gdf.loc[idx[:, :, :], 'last_timestep'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(1, )
         deaths_gdf.loc[idx[:, :, :], 'last_year'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(2)
@@ -216,10 +216,10 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
 
     elif time=='annual':
         timestep_col = 'year_since_2000'
-        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=6)[
-            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf_meta = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).mean()[
             ['theme_3_pc', 'lon', 'theme_2_pc', 'lat', 'svi_pctile', 'theme_1_pc', 'theme_4_pc']]
+        deaths_gdf = deaths_gdf.groupby(['grid_squar', 'year', timestep_col]).sum(min_count=6)[
+            ['deaths', 'delta_deaths', 'last_timestep', 'last_year', 'neighbors_last_timestep', 'neighbors_last_year']]
         deaths_gdf = deaths_gdf.merge(deaths_gdf_meta, left_index=True, right_index=True)
         deaths_gdf.loc[idx[:, :, :], 'last_timestep'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(1, )
         deaths_gdf.loc[idx[:, :, :], 'last_year'] = deaths_gdf.loc[idx[:, :, :], 'deaths'].shift(2)
@@ -239,10 +239,14 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
     if auto_kernel:
         features = ['grid_squar', 'lat', 'lon', timestep_col, 'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
          'svi_pctile', 'neighbors_last_timestep', 'last_timestep']
+        features_no_idx = ['lat', 'lon', timestep_col, 'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
+         'svi_pctile', 'neighbors_last_timestep', 'last_timestep']
     else:
+
         features = ['grid_squar', 'lat', 'lon', timestep_col, 'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
          'svi_pctile']
-
+        features_no_idx = ['lat', 'lon', timestep_col, 'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
+         'svi_pctile']
     train_x_through_2018 = deaths_gdf_with_autoregressive[deaths_gdf_with_autoregressive['year'] <= 2018][features].dropna()
     train_y_through_2018 = deaths_gdf_with_autoregressive.loc[train_x_through_2018.index][
         ['grid_squar', timestep_col, 'deaths']].dropna()
@@ -280,18 +284,18 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
 
     N = len(train_x_through_2018)
     Z = random.choice(train_x_through_2018[
-                          features].values, size=M, replace=False)
+                          features_no_idx].values, size=M, replace=False)
 
     Zf = copy.deepcopy(Z)
     Zg = copy.deepcopy(Z)
 
     train_dataset = tf.data.Dataset.from_tensor_slices((train_x_through_2018.loc[:,
-                                                        features],
+                                                        features_no_idx],
                                                         train_y_through_2018.loc[:, 'deaths'].values.reshape(-1,
                                                                                                              1))).repeat().shuffle(
         N)
 
-    m = OnOffSVGP(train_x_through_2018.loc[:, features].values,
+    m = OnOffSVGP(train_x_through_2018.loc[:, features_no_idx].values,
                   train_y_through_2018.loc[:, 'deaths'].values.reshape(-1, 1)
                   , kernf=f_kernel,
                   kerng=g_kernel
@@ -306,34 +310,35 @@ def run_model(time=None, data_dir=None, auto_kernel=False, inducing_points=None,
 
     m.optimize(maxiter=iterations)  # ,method= tf.train.AdamOptimizer(learning_rate = 0.01)
 
-    pred_2019 = m.predict_onoffgp(x_just_2019.loc[:, features].values)
+    pred_2019 = m.predict_onoffgp(x_just_2019.loc[:, features_no_idx].values)
     pred_2019 = pred_2019[0]
 
-    pred_timesteps = pred_2019.timesteps.unique()
+
+    pred_timesteps = x_just_2019[timestep_col].unique()
+
 
     maes, top_10s, top_50s, top_100s = [], [], [], []
     for timestep in pred_timesteps:
-        single_time_pred = pred_2019[pred_2019['timestep']==timestep]
-        single_time_true = y_just_2019[y_just_2019['timestep']==timestep]
+        single_time_pred = pred_2019[x_just_2019[timestep_col]==timestep]
+        single_pred_df = pd.Series(single_time_pred.squeeze(), index=x_just_2019[x_just_2019[timestep_col]==timestep].grid_squar)
+        single_time_true = y_just_2019[y_just_2019[timestep_col]==timestep]
 
         maes.append(mean_absolute_error(single_time_true.deaths, single_time_pred))
-        top_10s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_time_pred, 10))
-        top_50s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_time_pred, 50))
-        top_100s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_time_pred, 100))
+        top_10s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_pred_df, 10))
+        top_50s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_pred_df, 50))
+        top_100s.append(top_X(single_time_true.set_index('grid_squar')['deaths'], single_pred_df, 100))
 
     model_fname = os.path.join(out_dir, 'model.pkl')
-    result_fname = os.path.join(out_dir, 'res,pkl')
+    result_fname = os.path.join(out_dir, 'res.pkl')
 
     m.savemodel(model_fname)
     with open(result_fname, 'wb') as outfile:
-        pickle.dump(result_fname)
-
-
-    return
+        pickle.dump((maes, top_10s, top_50s, top_100s), outfile)
+        return
 
 if __name__ == '__main__':
     import argparse
-    parser = argparse.ArgumentParser
+    parser = argparse.ArgumentParser()
 
     parser.add_argument('--time', type=str, help="Temporal division of data",
                         choices=['qtr','biannual', 'annual'])
@@ -345,4 +350,8 @@ if __name__ == '__main__':
     parser.add_argument('--iterations', type=int, required=True,
                         help="Number of iterations to run")
     parser.add_argument('--out_dir', type=str, required=True, help='Directory to save results in')
+
+
+    args = parser.parse_args()
     
+    run_model(**vars(args))    
