@@ -20,7 +20,9 @@ from sklearn.neural_network import MLPRegressor
 
 import gpflow
 import tensorflow as tf
-
+import sys
+code_dir = '/cluster/home/kheuto01/code/zero-inflated-gp/'
+sys.path.append(code_dir)
 from math import radians, cos, sin, asin, sqrt
 from onoffgpf import OnOffSVGP, OnOffLikelihood
 
