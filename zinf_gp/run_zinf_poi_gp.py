@@ -145,6 +145,7 @@ def run_adam(model, iterations, out_dir, death_df, learning_rate=0.005):
     logf = []
     stat_logs = pd.DataFrame()
     stat_path = os.path.join(out_dir, 'stats.csv')
+    model_path = os.path.join(out_dir, 'model.mod')
     training_loss = model.training_loss_closure(compile=True)
     optimizer = tf.optimizers.Adam(learning_rate=learning_rate)#gpflow.optimizers.Adam(learning_rate=0.01)
 
@@ -182,6 +183,7 @@ def run_adam(model, iterations, out_dir, death_df, learning_rate=0.005):
                                              ignore_index=True)
 
                 stat_logs.to_csv(stat_path)
+
 
     return logf
 
@@ -304,7 +306,7 @@ def run_model(time=None, data_dir=None, kernel=None, auto_kernel=False, inducing
                        samples=samples
                        )
 
-    logf = run_adam(m, 2000, learning_rate=learning_rate)
+    logf = run_adam(m, 2000,out_dir, deaths_gdf_with_autoregressive, learning_rate=learning_rate)
 
 if __name__ == '__main__':
     import argparse
@@ -314,8 +316,8 @@ if __name__ == '__main__':
                         choices=['qtr','biannual', 'annual'], default='qtr')
     parser.add_argument('--data_dir', type=str, help="Path to opioid data",
                         default='/cluster/tufts/hugheslab/datasets/NSF_OD/')
-    parser.add_argument('--kernel', type=str, help="How to store data",
-                        choices=['qtr', 'biannual', 'annual'], default='qtr')
+    parser.add_argument('--kernel', type=str, help="How to make kernels",
+                        choices=['st_only', 'svi_only', 'svi_full'],)
     parser.add_argument('--auto_kernel', action='store_true', help="If present, add a kernel with autoregressive features.")
     parser.add_argument('--inducing_points', type=int, required=True, default=200,
                         help="Number of inducing points to use")
