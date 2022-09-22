@@ -179,11 +179,11 @@ def run_adam(model, iterations, out_dir, death_df, learning_rate=0.005):
                 maes.append(mean_absolute_error(test_y.deaths, pred_2019_df))
                 xtop.append(fixed_top_X(test_y.set_index('grid_squar')['deaths'], pred_2019_df, 100))
 
-                stat_logs = stat_logs.append({'iter': step,'elbo':elbo, 'mae': np.mean(maes), 'bpr_100': np.mean(xtop)},
+                stat_logs = stat_logs.append({'iter': step,'elbo':elbo, 'mae': np.mean(maes), 'bpr_100': np.mean([thing[3] for thing in xtop])},
                                              ignore_index=True)
 
-                stat_logs.to_csv(stat_path)
-                model.savemodel(model_path)
+            stat_logs.to_csv(stat_path)
+            model.savemodel(model_path)
 
 
     return logf
