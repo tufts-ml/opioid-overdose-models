@@ -190,7 +190,7 @@ def run_adam(model, iterations, out_dir, death_df, learning_rate=0.005):
 
 
 def run_model(time=None, data_dir=None, kernel=None, auto_kernel=False, inducing_points=None, iterations=None,
-              out_dir=None, samples=None, learning_rate=None):
+              out_dir=None, samples=None, learning_rate=None, seed=None):
 
     result_dir = os.path.join(data_dir, 'results')
     mass_shapefile = os.path.join(data_dir, 'shapefiles', 'MA_2021')
@@ -282,7 +282,7 @@ def run_model(time=None, data_dir=None, kernel=None, auto_kernel=False, inducing
     f_kernel = copy.deepcopy(gaussian_kernel)
     g_kernel = copy.deepcopy(gaussian_kernel)
     likelihood = OnOffLikelihood()
-    random = np.random.default_rng(seed=1)
+    random = np.random.default_rng(seed=seed)
 
     M = inducing_points
     N = len(train_x_through_2018)
@@ -326,6 +326,8 @@ if __name__ == '__main__':
                         help="Number of inducing points to use")
     parser.add_argument('--iterations', type=int, required=True,
                         help="Number of iterations to run")
+    parser.add_argument('--seed', type=int, default=1,
+                        help="seed to use for inducing points")
     parser.add_argument('--learning_rate', type=float,
                         help="Adam LR", default=0.005)
     parser.add_argument('--out_dir', type=str, required=True, help='Directory to save results in')
