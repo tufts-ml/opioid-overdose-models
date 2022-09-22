@@ -183,6 +183,7 @@ def run_adam(model, iterations, out_dir, death_df, learning_rate=0.005):
                                              ignore_index=True)
 
                 stat_logs.to_csv(stat_path)
+                model.savemodel(model_path)
 
 
     return logf
