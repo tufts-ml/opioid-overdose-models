@@ -321,11 +321,11 @@ if __name__ == '__main__':
     parser.add_argument('--auto_kernel', action='store_true', help="If present, add a kernel with autoregressive features.")
     parser.add_argument('--inducing_points', type=int, required=True, default=200,
                         help="Number of inducing points to use")
-    parser.add_argument('--samples', type=int, required=True, default=10,
+    parser.add_argument('--samples', type=int, default=10,
                         help="Number of inducing points to use")
     parser.add_argument('--iterations', type=int, required=True,
                         help="Number of iterations to run")
-    parser.add_argument('--learning_rate', type=float, required=True,
+    parser.add_argument('--learning_rate', type=float,
                         help="Adam LR", default=0.005)
     parser.add_argument('--out_dir', type=str, required=True, help='Directory to save results in')
 
