@@ -107,7 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('--timesteps_per_year', type=int, help='Number of timesteps per year')
     parser.add_argument('--test_years', type=int, help='Number of years to test')
     parser.add_argument('--timestep_col', type=str, default='timestep', help='Name of column containg time index')
-    parser.add_argument('--geograph_col', type=str, default='geoid', help='Name of column containg geography index')
+    parser.add_argument('--geography_col', type=str, default='geoid', help='Name of column containg geography index')
     parser.add_argument('--use_auto', action='store_true', help="If present, add a kernel with autoregressive features.")
     parser.add_argument('--use_svi', action='store_true', help="If present, add a kernel with svi features.")
     parser.add_argument('--likelihood', type=str, default='normal', choices=['normal', 'poisson'])
