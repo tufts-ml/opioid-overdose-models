@@ -6,8 +6,8 @@ def normcdf(x):
 
 
 def fixed_top_X(true_qtr_val, pred_qtr_val, X=10):
-    top_X_predicted = pred_qtr_val.sort_values(ascending=False)[:X]
-    top_X_true = true_qtr_val.sort_values(ascending=False)[:X]
+    top_X_predicted = pred_qtr_val.sort_values(ascending=False).iloc[:X]
+    top_X_true = true_qtr_val.sort_values(ascending=False).iloc[:X]
 
     undisputed_top_predicted = top_X_predicted[top_X_predicted > top_X_predicted.min()]
     num_tied_spots = X - len(undisputed_top_predicted)
