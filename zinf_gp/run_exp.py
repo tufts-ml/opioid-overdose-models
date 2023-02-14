@@ -17,8 +17,8 @@ gpflow.config.default_float()
 
 
 
-def run_model(data_path=None, last_train_year=None, test_years=None,
-              timesteps_per_year=None,
+def run_model(data_path=None, first_train_year=None, last_train_year=None,
+              test_years=None, timesteps_per_year=None,
               timestep_col=None, geography_col=None, outcome_col=None,
               use_auto=None, use_svi=None,
               likelihood=None, seed=None,
@@ -38,8 +38,10 @@ def run_model(data_path=None, last_train_year=None, test_years=None,
 
     data_gdf = gpd.read_file(data_path)
 
-    train_x = data_gdf[data_gdf['year'] <= last_train_year][x_idx_cols]
-    train_y = data_gdf[data_gdf['year'] <= last_train_year][y_idx_cols]
+    train_x = data_gdf[(data_gdf['year'] <= last_train_year) &
+                       (data_gdf['year'] >= first_train_year)][x_idx_cols]
+    train_y = data_gdf[(data_gdf['year'] <= last_train_year) &
+                       (data_gdf['year'] >= first_train_year)][y_idx_cols]
     test_x = data_gdf[(data_gdf['year'] > last_train_year) &
                       (data_gdf['year'] <= last_train_year+test_years)][x_idx_cols]
     test_y = data_gdf[(data_gdf['year'] > last_train_year) &
@@ -88,7 +90,7 @@ def run_model(data_path=None, last_train_year=None, test_years=None,
                                Zf=Zf, Zg=Zg, samples=samples)
     else:
         print('never ahppens')
-        break
+        return
 
     logs = run_adam(model, iterations, learning_rate, out_dir, test_x, test_y,
                     timesteps_per_year, test_years, timestep_col, features_only)
@@ -96,20 +98,19 @@ def run_model(data_path=None, last_train_year=None, test_years=None,
     print(logs)
 
 if __name__ == '__main__':
-    import argparse
+    import
+    parser.add_argument('--last_train_year', type=int, help='Value of last year used in training')
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--time', type=str, help="Temporal division of data",
-                        choices=['qtr' ,'biannual', 'annual'], default='qtr')
     parser.add_argument('--data_path', type=str, help="Path to opioid data file")
-    parser.add_argument('--last_train_timestep', type=int, help='Value of last timestep used in training')
+    parser.add_argument('--first_train_year', type=int, help='Value of first year used in training')
+    parser.add_argument('--last_train_year', type=int, help='Value of last year used in training')
     parser.add_argument('--timesteps_per_year', type=int, help='Number of timesteps per year')
     parser.add_argument('--test_years', type=int, help='Number of years to test')
     parser.add_argument('--timestep_col', type=str, default='timestep', help='Name of column containg time index')
     parser.add_argument('--geograph_col', type=str, default='geoid', help='Name of column containg geography index')
-    parser.add_argument('--kernel', type=str, help="How to make kernels",
-                        choicetest_xs=['st_only', 'svi_only', 'svi_full'] ,)
-    parser.add_argument('--auto_kernel', action='store_true', help="If present, add a kernel with autoregressive features.")
+    parser.add_argument('--use_auto', action='store_true', help="If present, add a kernel with autoregressive features.")
+    parser.add_argument('--use_svi', action='store_true', help="If present, add a kernel with svi features.")
     parser.add_argument('--likelihood', type=str, default='normal', choices=['normal', 'poisson'])
     parser.add_argument('--inducing_points', type=int, required=True, default=200,
                         help="Number of inducing points to use")
