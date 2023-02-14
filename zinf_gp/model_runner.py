@@ -27,7 +27,7 @@ def run_adam(model, iterations,
     training_loss = model.training_loss_closure(compile=True)
     optimizer = tf.optimizers.Adam(learning_rate=learning_rate)  # gpflow.optimizers.Adam(learning_rate=0.01)
 
-    starting_timestep = test_x[timestep_col].min()
+    starting_timestep = int(test_x[timestep_col].min())
 
     @tf.function
     def optimization_step():
