@@ -98,8 +98,7 @@ def run_model(data_path=None, first_train_year=None, last_train_year=None,
     print(logs)
 
 if __name__ == '__main__':
-    import
-    parser.add_argument('--last_train_year', type=int, help='Value of last year used in training')
+    import argparse
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--data_path', type=str, help="Path to opioid data file")
