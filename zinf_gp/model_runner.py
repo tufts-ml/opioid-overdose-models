@@ -1,5 +1,5 @@
 import os
-
+import copy
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -40,25 +40,27 @@ def run_adam(model, iterations,
             logf.append(elbo)
 
             maes = []
-            xtop = []
+            xtops = []
             for year in range(test_years):
                 maes_year = []
                 xtop_year = []
-                for timestep in range(starting_timestep, starting_timestep+test_years*timesteps_per_year):
+                for timestep in range(starting_timestep+year*timesteps_per_year, starting_timestep+year*timesteps_per_year+timesteps_per_year):
                     test_x_time = test_x[test_x[timestep_col] == timestep]
                     test_y_time = test_y[test_y[timestep_col] == timestep]
-                    _, _, _, fmean, fvar, gmean, gvar, _, _ = model.build_predict(test_x.loc[:, features_only].values)
+                    _, _, _, fmean, fvar, gmean, gvar, _, _ = model.build_predict(test_x_time.loc[:, features_only].values)
                     g_cond = tf.math.softplus(fmean * normcdf(gmean) + 2).numpy()
-                    pred_df = pd.Series(g_cond.squeeze(), index=test_y[geography_col])
+                    pred_df = pd.Series(g_cond.squeeze(), index=test_y_time[geography_col])
 
-                    maes_year.append(mean_absolute_error(test_y.deaths, pred_df))
-                    maes_year.append(fixed_top_X(test_y.set_index(geography_col)[outcome_col], pred_df, 100))
+                    maes_year.append(mean_absolute_error(test_y_time.deaths, pred_df))
+                    xtop_year.append(fixed_top_X(test_y_time.set_index(geography_col)[outcome_col], pred_df, 100))
                 maes.append(maes_year)
-                xtop.append(xtop_year)
-
-            stat_logs = stat_logs.append(
-                {'iter': step, 'elbo': elbo, 'mae': np.mean(maes), 'bpr_100': np.mean([thing[3] for thing in xtop])},
-                ignore_index=True)
+                xtops.append(xtop_year)
+            curr_results = {'iter':step, 'elbo': elbo}
+            print(xtops)            
+            for y, (mae, xtop) in enumerate(zip(maes, xtops)):
+                curr_results[f'mae_{y}'] = copy.deepcopy(np.mean(mae))
+                curr_results[f'bpr_100_{y}'] = copy.deepcopy(np.mean([thing[3] for thing in xtop]))
+            stat_logs = stat_logs.append(curr_results, ignore_index=True)
 
             stat_logs.to_csv(stat_path)
             model.savemodel(model_path)

@@ -29,7 +29,6 @@ def fixed_top_X(true_qtr_val, pred_qtr_val, X=10):
     # True values of GEOIDS with highest actual deaths. If ties, finds tied locations that match preds best
     best_possible_true = true_qtr_val[best_possible_top_true_geoids]
     best_possible_pred = true_qtr_val[best_possible_top_pred_geoids]
-
     assert (len(best_possible_true) == X)
     assert (len(best_possible_pred) == X)
 
