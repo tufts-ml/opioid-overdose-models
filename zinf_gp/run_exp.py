@@ -93,7 +93,7 @@ def run_model(data_path=None, first_train_year=None, last_train_year=None,
         return
 
     logs = run_adam(model, iterations, learning_rate, out_dir, test_x, test_y,
-                    timesteps_per_year, test_years, timestep_col, features_only)
+                    timesteps_per_year, test_years, timestep_col, outcome_col, features_only)
 
     print(logs)
 
