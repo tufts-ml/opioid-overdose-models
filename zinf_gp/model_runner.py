@@ -41,7 +41,7 @@ def run_adam(model, iterations,
 
             maes = []
             xtop = []
-            for year in test_years:
+            for year in range(test_years):
                 maes_year = []
                 xtop_year = []
                 for timestep in range(starting_timestep, starting_timestep+test_years*timesteps_per_year):
