@@ -29,12 +29,12 @@ def run_model(data_path=None, first_train_year=None, last_train_year=None,
     x_idx_cols = [geography_col, 'lat','lon', timestep_col,
                   'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
                   'svi_pctile',
-                  'neighbor_t-1', 'self_t-1']
+                  'neighbor_t', 'self_t-1']
     y_idx_cols = [geography_col, timestep_col, outcome_col]
     features_only = ['lat','lon', timestep_col,
                      'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
                      'svi_pctile',
-                     'neighbor_t-1', 'self_t-1']
+                     'neighbor_t', 'self_t-1']
 
     data_gdf = gpd.read_file(data_path)
 
