@@ -7,6 +7,7 @@ import numpy as np
 import gpflow
 
 from metrics import fixed_top_X
+from model_runner import run_adam
 
 code_dir = '/cluster/home/kheuto01/code/zero-inflated-gp/'
 sys.path.append(code_dir)
@@ -89,7 +90,10 @@ def run_model(data_path=None, last_train_year=None, test_years=None,
         print('never ahppens')
         break
 
-    logs = run_adam(modlearning_rateel, iterations, learning_rate, out_dir, test_x, test_y, timesteps_per_year)
+    logs = run_adam(model, iterations, learning_rate, out_dir, test_x, test_y,
+                    timesteps_per_year, test_years, timestep_col, features_only)
+
+    print(logs)
 
 if __name__ == '__main__':
     import argparse
@@ -100,10 +104,11 @@ if __name__ == '__main__':
     parser.add_argument('--data_path', type=str, help="Path to opioid data file")
     parser.add_argument('--last_train_timestep', type=int, help='Value of last timestep used in training')
     parser.add_argument('--timesteps_per_year', type=int, help='Number of timesteps per year')
+    parser.add_argument('--test_years', type=int, help='Number of years to test')
     parser.add_argument('--timestep_col', type=str, default='timestep', help='Name of column containg time index')
     parser.add_argument('--geograph_col', type=str, default='geoid', help='Name of column containg geography index')
     parser.add_argument('--kernel', type=str, help="How to make kernels",
-                        choices=['st_only', 'svi_only', 'svi_full'] ,)
+                        choicetest_xs=['st_only', 'svi_only', 'svi_full'] ,)
     parser.add_argument('--auto_kernel', action='store_true', help="If present, add a kernel with autoregressive features.")
     parser.add_argument('--likelihood', type=str, default='normal', choices=['normal', 'poisson'])
     parser.add_argument('--inducing_points', type=int, required=True, default=200,

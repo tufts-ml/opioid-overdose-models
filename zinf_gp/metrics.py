@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
 
+def normcdf(x):
+    return 0.5 * (1.0 + tf.math.erf(x / np.sqrt(2.0))) * (1. - 2.e-3) + 1.e-3
+
 
 def fixed_top_X(true_qtr_val, pred_qtr_val, X=10):
     top_X_predicted = pred_qtr_val.sort_values(ascending=False)[:X]
