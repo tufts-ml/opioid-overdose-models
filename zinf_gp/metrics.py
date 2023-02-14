@@ -20,8 +20,8 @@ def fixed_top_X(true_qtr_val, pred_qtr_val, X=10):
     error_in_top_true_ties = np.abs(tied_top_true - pred_qtr_val[tied_top_true.index]).sort_values(ascending=True)
     error_in_top_pred_ties = np.abs(true_qtr_val[tied_top_predicted.index] - tied_top_predicted).sort_values(
         ascending=True)
-    top_true_tied_geoids = error_in_top_true_ties[:num_true_ties].index
-    top_pred_tied_geoids = error_in_top_pred_ties[:num_tied_spots].index
+    top_true_tied_geoids = error_in_top_true_ties.iloc[:num_true_ties].index
+    top_pred_tied_geoids = error_in_top_pred_ties.iloc[:num_tied_spots].index
 
     best_possible_top_true_geoids = pd.Index.union(undisputed_top_true.index, top_true_tied_geoids)
     best_possible_top_pred_geoids = pd.Index.union(undisputed_top_predicted.index, top_pred_tied_geoids)
