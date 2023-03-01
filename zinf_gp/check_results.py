@@ -129,6 +129,7 @@ def check_results(data_dir=None, time=None, loc=None,
                 stats = pd.read_csv(f)
                 elbo = stats.iloc[-1, :][['elbo']].values[0]
         except(FileNotFoundError):
+            print(os.path.join(log_dir,this_run))
             continue
 
         if elbo > best_elbo:
@@ -164,7 +165,7 @@ def check_results(data_dir=None, time=None, loc=None,
                 pred_df = pd.Series(index=y_index, dtype='float64')
                 pred_df.update(averaged_over_duplicates)
 
-            y_index = test_y_time.geography_col
+            y_index = test_y_time[geography_col]
             sampled_size = int(0.95*len(y_index))
             assert(sampled_size==1539)
             sampled_xtops = []
@@ -201,7 +202,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    run_model(**vars(args))
+    check_results(**vars(args))
 
 
 
