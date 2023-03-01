@@ -48,7 +48,7 @@ def run_adam(model, iterations,
                     test_x_time = test_x[test_x[timestep_col] == timestep]
                     test_y_time = test_y[test_y[timestep_col] == timestep]
                     _, _, _, fmean, fvar, gmean, gvar, _, _ = model.build_predict(test_x_time.loc[:, features_only].values)
-                    g_cond = tf.math.softplus(fmean * normcdf(gmean) + 2).numpy()
+                    g_cond = tf.math.softplus(fmean * normcdf(gmean)).numpy()
                     pred_df = pd.Series(g_cond.squeeze(), index=test_y_time[geography_col])
 
                     maes_year.append(mean_absolute_error(test_y_time.deaths, pred_df))
