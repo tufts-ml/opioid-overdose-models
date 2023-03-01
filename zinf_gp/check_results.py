@@ -177,7 +177,12 @@ def check_results(data_dir=None, time=None, loc=None,
                 sampled_xtops.append(result)
 
             xtop_ptiles = np.percentile(sampled_xtops, [2.5, 50, 97.5])
-            print(xtop_ptiles)
+            xtop_year.append(xtop_ptiles)
+        annual_avg = np.array(xtop_year).mean(axis=0)
+        xtops.append(annual_avg)
+
+    final_results = pd.DataFrame(xtops)
+    final_results.to_csv(os.path.join(log_dir, 'unc_results.csv'))
 
 if __name__ == '__main__':
     import argparse
