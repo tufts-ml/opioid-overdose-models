@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-#SBATCH -n 4                # Number of cores
-#SBATCH -t 01:00          # Runtime in D-HH:MM
+#SBATCH -n 1                # Number of cores
+#SBATCH -t 01:00:00          # Runtime in D-HH:MM
 #SBATCH -p preempt           # Partition to submit to
 #SBATCH --mem-per-cpu 30000  # Memory (in MB) per cpu
 #SBATCH -o /cluster/tufts/hugheslab/kheuto01/slurmlog/out/log_%j.out       # Write stdout to file named log_JOBIDNUM.out in log dir
@@ -15,4 +15,4 @@ echo "args:"
 echo $args
 
 
-python  check_results.py $args
+python  /cluster/home/kheuto01/code/opioid-overdose-models/zinf_gp/check_results.py $args

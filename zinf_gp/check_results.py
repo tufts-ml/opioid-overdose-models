@@ -182,7 +182,7 @@ def check_results(data_dir=None, time=None, loc=None,
         xtops.append(annual_avg)
 
     final_results = pd.DataFrame(xtops)
-    final_results.to_csv(os.path.join(log_dir, 'unc_results.csv'))
+    final_results.to_csv(os.path.join(log_dir, f'unc_results_{time}_{loc}_{model}_{start_year}_{cov}_{num_inducing}.csv'))
 
 if __name__ == '__main__':
     import argparse
