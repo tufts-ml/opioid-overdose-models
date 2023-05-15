@@ -14,8 +14,8 @@ def bpr_variable_k_no_ties(y_true, y_pred, k=None):
     Note: This method DOES NOT handle ties, as it is meant to be used in a perturbed fashion
     """
 
-    top_k_pred_idx, _ = tf.math.top_k(y_pred)
-    top_k_true_idx, top_k_true_val = tf.math.top_k(y_true)
+    _, top_k_pred_idx = tf.math.top_k(y_pred, k=k)
+    top_k_true_val, top_k_true_idx = tf.math.top_k(y_true, k=k)
 
     # Denominator is actual top-k
     # Impossible to have ties here, a tie wouldn't change the value
