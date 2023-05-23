@@ -27,6 +27,8 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
     first_test_year = 2019
     last_test_year = 2020
 
+    tf.random.set_seed(seed)
+
 
     timestep_col = 'timestep'
     geography_col = 'geoid'
@@ -79,6 +81,14 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
         initial_value_threshold=-0.35
     )
     tb_callback = tf.keras.callbacks.TensorBoard(log_dir)
+
+    optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+
+    # Compile the model
+    def weird_loss(a, b):
+        return -a / b
+
+    model.compile(optimizer=optimizer, loss=weird_loss)
 
     model.fit(train_x_BSF_flat, train_y_BS, epochs=epochs, batch_size=batch_dim_size,
               validation_data=(valid_x_BSF_flat, valid_y_BS),

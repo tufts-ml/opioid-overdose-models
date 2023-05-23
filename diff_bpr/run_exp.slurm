@@ -9,7 +9,6 @@
 
 which python
 pwd
-export PYTHONPATH=$PYTHONPATH:$code_dir
 
 echo "args:"
 echo $args
