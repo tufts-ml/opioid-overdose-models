@@ -48,7 +48,8 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
 
     data_gdf = gpd.read_file(data_path)
 
-    multiindexed_gdf = data_gdf.set_index(['geoid', 'year'])
+    multiindexed_gdf = data_gdf.set_index(['geoid', 'timestep'])
+    multiindexed_gdf['timestep'] = multiindexed_gdf.index.get_level_values('timestep')
     num_geoids = len(data_gdf['geoid'].unique())
 
     # timestep of prediction is added to features so + 1
