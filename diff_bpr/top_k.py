@@ -1,3 +1,5 @@
+import tensorflow as tf
+
 def top_k_idx(input_BD, **kwargs):
     _, idx_BD = tf.math.top_k(input_BD, **kwargs)
     input_depth = input_BD.shape[-1]
