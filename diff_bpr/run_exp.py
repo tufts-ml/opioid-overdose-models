@@ -84,7 +84,7 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
         checkpoint_path,
         monitor='val_loss',
         save_best_only=True,
-        save_weights_only=False,
+        save_weights_only=True,
         save_freq='epoch',
         initial_value_threshold=-0.35
     )
