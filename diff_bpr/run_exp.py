@@ -13,7 +13,8 @@ from make_datasets import make_data
 from bpr_model import PerturbedBPRModel
 
 def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
-            seed=None, data_path=None, log_dir=None, perturb_code_dir=None):
+            seed=None, data_path=None, log_dir=None, perturb_code_dir=None, hidden_sizes=None,
+            timesteps_per_year=None):
 
     sys.path.append(perturb_code_dir)
     from perturbations import perturbed
@@ -37,29 +38,36 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
     x_idx_cols = [geography_col, 'lat', 'lon', timestep_col,
                   'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
                   'svi_pctile', 'year',
-                  'neighbor_t', 'self_t-1']
+                  'neighbor_t', 'deaths']
     y_idx_cols = [geography_col, timestep_col, outcome_col]
-    """features_only = ['lat', 'lon', timestep_col,
+    features_only = ['lat', 'lon', timestep_col,
                      'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
                      'svi_pctile',
-                     'neighbor_t', 'self_t-1']"""
-    features_only = ['deaths']
+                     'neighbor_t', 'deaths']
+    #features_only = ['deaths']
 
     data_gdf = gpd.read_file(data_path)
 
     multiindexed_gdf = data_gdf.set_index(['geoid', 'year'])
     num_geoids = len(data_gdf['geoid'].unique())
 
-    train_shape = (num_geoids, time_window, len(features_only))
+    # timestep of prediction is added to features so + 1
+    train_shape = (num_geoids, time_window, len(features_only)+1)
 
     train_x_BSF_flat, train_y_BS = make_data(multiindexed_gdf, first_train_eval_year, last_train_eval_year,
-                                             time_window, features_only, train_shape)
+                                             time_window, features_only, train_shape, pred_lag=timesteps_per_year)
 
     valid_x_BSF_flat, valid_y_BS = make_data(multiindexed_gdf, validation_year, validation_year,
-                                             time_window, features_only, train_shape)
+                                             time_window, features_only, train_shape, pred_lag=timesteps_per_year)
 
     test_x_BSF_flat, test_y_BS = make_data(multiindexed_gdf, first_test_year, last_test_year,
-                                           time_window, features_only, train_shape)
+                                           time_window, features_only, train_shape, pred_lag=timesteps_per_year)
+
+    norm_layer = tf.keras.layers.Normalization()
+    norm_layer.adapt(train_x_BSF_flat)
+    train_x_BSF_flat = norm_layer(train_x_BSF_flat)
+    valid_x_BSF_flat = norm_layer(valid_x_BSF_flat)
+    test_x_BSF_flat = norm_layer(test_x_BSF_flat)
 
     top_100_idx_func = partial(top_k_idx, k=100)
 
@@ -69,7 +77,7 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
                                   noise='normal',
                                   batched=True)
 
-    model = PerturbedBPRModel(perturbed_top_100)
+    model = PerturbedBPRModel(perturbed_top_100, hidden_sizes=hidden_sizes)
 
     checkpoint_path = os.path.join(log_dir, 'model_{epoch:02d}.hdf5')
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -110,6 +118,8 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--data_path', type=str, help='Data path', required=True)
     parser.add_argument('-ld', '--log_dir', type=str, help='Log directory', required=True)
     parser.add_argument('-pcd', '--perturb_code_dir', type=str, help='Path to perturbations moduel', required=True)
+    parser.add_argument("--hidden_sizes", nargs="+", type=int, help="List of sizes", default=[10])
+    parser.add_argument("--timesteps_per_year", type=int, help="1=annual, 4 = quarterly", default=1)
 
     args = parser.parse_args()
     kwargs = vars(args)  # Convert args to a dictionary

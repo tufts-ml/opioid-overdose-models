@@ -3,18 +3,22 @@ import tensorflow as tf
 
 class PerturbedBPRModel(tf.keras.Model):
 
-    def __init__(self, perturbed_top_k_func, k=100):
+    def __init__(self, perturbed_top_k_func,hidden_sizes=[10], k=100):
         """k should match the k baked into the perturbed top_k func.
         we need k for when performing exact top k in evaluation step."""
         super(PerturbedBPRModel, self).__init__()
         self.perturbed_top_k_func = perturbed_top_k_func
         self.k = k
-        self.hidden = tf.keras.layers.Dense(10, activation='relu')
+        self.hidden_layers = []
+        for hidden_size in hidden_sizes:
+            self.hidden_layers.append(tf.keras.layers.Dense(hidden_size, activation='relu'))
+        self.hidden = tf.keras.layers.Dense(10, activation='tanh')
         self.output_layer = tf.keras.layers.Dense(1, activation=None)
 
     def call(self, inputs):
-        intermediate = self.hidden(inputs)
-        outputs = self.output_layer(intermediate)
+        for hidden_layer in self.hidden_layers:
+            inputs = hidden_layer(inputs)
+        outputs = self.output_layer(inputs)
         # squeeze away feature dimension
         outputs = tf.squeeze(outputs, axis=-1)
         return outputs
