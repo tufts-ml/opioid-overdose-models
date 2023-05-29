@@ -14,13 +14,13 @@ from bpr_model import PerturbedBPRLinearModel, PerturbedBPRMLPModel
 
 def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
             seed=None, data_path=None, log_dir=None, perturb_code_dir=None, hidden_sizes=None,
-            timesteps_per_year=None, model=None, add_spacetime=None, add_svi=None):
+            timesteps_per_year=None, model=None, add_spacetime=None, add_svi=None, lookback_years=None):
 
     sys.path.append(perturb_code_dir)
     from perturbations import perturbed
 
     epochs = 5000
-    time_window = 10
+    time_window = lookback_years*timesteps_per_year
     first_train_eval_year = 2013
     last_train_eval_year = 2017
     batch_dim_size = last_train_eval_year - first_train_eval_year + 1
@@ -134,6 +134,7 @@ if __name__ == '__main__':
     parser.add_argument("--model", type=str, help="linear or mlp", choices=['linear', 'mlp'])
     parser.add_argument("--add_spacetime", action='store_true', help='add lat/lon and time feature')
     parser.add_argument("--add_svi", action='store_true', help='add svi features')
+    parser.add_argument("--lookback_years", type=int, help="years to go back", default=5)
 
     args = parser.parse_args()
     kwargs = vars(args)  # Convert args to a dictionary
