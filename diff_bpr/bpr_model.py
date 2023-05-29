@@ -86,8 +86,7 @@ class PerturbedBPRLinearModel(PerturbedBPRBaseModel):
         super(PerturbedBPRLinearModel, self).__init__(**kwargs)
 
         self.lookback_weights = tf.Variable(
-            tf.random_uniform_initializer()(shape=(lookback_size, 1),
-                                            minval=0.4, maxval=0.6,
+            tf.random_uniform_initializer(minval=0.4, maxval=0.6)(shape=(lookback_size, 1),
                                             dtype=tf.float32),
             trainable=True)
         self.lookback_bias = tf.Variable(
