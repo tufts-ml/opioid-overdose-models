@@ -83,7 +83,7 @@ class PerturbedBPRLinearModel(PerturbedBPRBaseModel):
     def __init__(self, lookback_size=None, **kwargs):
         """k should match the k baked into the perturbed top_k func.
         we need k for when performing exact top k in evaluation step."""
-        super(PerturbedBPRBaseModel, self).__init__(**kwargs)
+        super(PerturbedBPRLinearModel, self).__init__(**kwargs)
 
         self.lookback_weights = tf.Variable(
             tf.random_uniform_initializer()(shape=(lookback_size, 1),
