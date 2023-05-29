@@ -55,8 +55,8 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
     num_geoids = len(data_gdf['geoid'].unique())
 
     # When we predict for sub-year intervals we add a 1-hot indicator for the pred time
-    if timesteps_per_year>1:
-        train_shape = (num_geoids, time_window, len(features_only)+timesteps_per_year)
+    # but that doesnt get used by trainshape
+    train_shape = (num_geoids, time_window, len(features_only))
 
     train_x_BSF_flat, train_y_BS = make_data(multiindexed_gdf, first_train_eval_year, last_train_eval_year,
                                              time_window, features_only, train_shape, pred_lag=timesteps_per_year)
