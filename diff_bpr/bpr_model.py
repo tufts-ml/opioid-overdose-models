@@ -1,27 +1,14 @@
 import tensorflow as tf
 
 
-class PerturbedBPRModel(tf.keras.Model):
+class PerturbedBPRBaseModel(tf.keras.Model):
 
-    def __init__(self, perturbed_top_k_func,hidden_sizes=[10], k=100):
+    def __init__(self, perturbed_top_k_func=None, k=100):
         """k should match the k baked into the perturbed top_k func.
         we need k for when performing exact top k in evaluation step."""
-        super(PerturbedBPRModel, self).__init__()
+        super(PerturbedBPRBaseModel, self).__init__()
         self.perturbed_top_k_func = perturbed_top_k_func
         self.k = k
-        self.hidden_layers = []
-        for hidden_size in hidden_sizes:
-            self.hidden_layers.append(tf.keras.layers.Dense(hidden_size, activation='relu'))
-        self.hidden = tf.keras.layers.Dense(10, activation='tanh')
-        self.output_layer = tf.keras.layers.Dense(1, activation=None)
-
-    def call(self, inputs):
-        for hidden_layer in self.hidden_layers:
-            inputs = hidden_layer(inputs)
-        outputs = self.output_layer(inputs)
-        # squeeze away feature dimension
-        outputs = tf.squeeze(outputs, axis=-1)
-        return outputs
 
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
@@ -69,3 +56,48 @@ class PerturbedBPRModel(tf.keras.Model):
         # Update the metrics.
         self.compiled_metrics.update_state(y, y_pred)
         return {m.name: m.result() for m in self.metrics}
+
+
+class PerturbedBPRMLPModel(PerturbedBPRBaseModel):
+
+    def __init__(self, hidden_sizes=[10], **kwargs):
+        """k should match the k baked into the perturbed top_k func.
+        we need k for when performing exact top k in evaluation step."""
+        super(PerturbedBPRMLPModel, self).__init__(**kwargs)
+
+        self.hidden_layers = []
+        for hidden_size in hidden_sizes:
+            self.hidden_layers.append(tf.keras.layers.Dense(hidden_size, activation='relu'))
+        self.output_layer = tf.keras.layers.Dense(1, activation=None)
+
+    def call(self, inputs):
+        for hidden_layer in self.hidden_layers:
+            inputs = hidden_layer(inputs)
+        outputs = self.output_layer(inputs)
+        # squeeze away feature dimension
+        outputs = tf.squeeze(outputs, axis=-1)
+        return outputs
+
+class PerturbedBPRLinearModel(PerturbedBPRBaseModel):
+
+    def __init__(self, lookback_size=None, **kwargs):
+        """k should match the k baked into the perturbed top_k func.
+        we need k for when performing exact top k in evaluation step."""
+        super(PerturbedBPRBaseModel, self).__init__(**kwargs)
+
+        self.lookback_weights = tf.Variable(
+            tf.random_uniform_initializer()(shape=(lookback_size, 1),
+                                            minval=0.4, maxval=0.6,
+                                            dtype=tf.float32),
+            trainable=True)
+        self.lookback_bias = tf.Variable(
+            tf.random_normal_initializer()(shape=(1,),
+                                           dtype=tf.float32),
+            trainable=True)
+
+    def call(self, inputs):
+        outputs = tf.linalg.matmul(inputs, self.lookback_weights) + self.lookback_bias
+
+        outputs = tf.squeeze(outputs, axis=-1)
+
+        return outputs

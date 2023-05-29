@@ -10,11 +10,11 @@ from functools import partial
 
 from top_k import top_k_idx
 from make_datasets import make_data
-from bpr_model import PerturbedBPRModel
+from bpr_model import PerturbedBPRLinearModel, PerturbedBPRMLPModel
 
 def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
             seed=None, data_path=None, log_dir=None, perturb_code_dir=None, hidden_sizes=None,
-            timesteps_per_year=None):
+            timesteps_per_year=None, model=None, add_spacetime=None, add_svi=None):
 
     sys.path.append(perturb_code_dir)
     from perturbations import perturbed
@@ -40,11 +40,13 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
                   'svi_pctile', 'year',
                   'neighbor_t', 'deaths']
     y_idx_cols = [geography_col, timestep_col, outcome_col]
-    features_only = ['lat', 'lon', timestep_col,
-                     'theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc',
-                     'svi_pctile',
-                     'neighbor_t', 'deaths']
-    #features_only = ['deaths']
+
+    features_only = ['deaths']
+
+    if add_spacetime:
+        features_only += ['lat', 'lon', timestep_col]
+    if add_svi:
+        features_only += ['theme_1_pc', 'theme_2_pc', 'theme_3_pc', 'theme_4_pc', 'svi_pctile']
 
     data_gdf = gpd.read_file(data_path)
 
@@ -78,7 +80,14 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
                                   noise='normal',
                                   batched=True)
 
-    model = PerturbedBPRModel(perturbed_top_100, hidden_sizes=hidden_sizes)
+    if model == 'linear':
+        model = PerturbedBPRLinearModel(perturbed_top_k_func=perturbed_top_100,
+                                        k=100,
+                                        lookback_size=train_x_BSF_flat.shape[-1])
+    elif model == 'mlp':
+        model = PerturbedBPRMLPModel(perturbed_top_k_func=perturbed_top_100,
+                                     k=100,
+                                     hidden_sizes=hidden_sizes)
 
     checkpoint_path = os.path.join(log_dir, 'model_{epoch:02d}.hdf5')
     checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
@@ -121,6 +130,9 @@ if __name__ == '__main__':
     parser.add_argument('-pcd', '--perturb_code_dir', type=str, help='Path to perturbations moduel', required=True)
     parser.add_argument("--hidden_sizes", nargs="+", type=int, help="List of sizes", default=[10])
     parser.add_argument("--timesteps_per_year", type=int, help="1=annual, 4 = quarterly", default=1)
+    parser.add_argument("--model", type=str, help="linear or mlp", choices=['linear', 'mlp'])
+    parser.add_argument("--add_spacetime", action='store_true', help='add lat/lon and time feature')
+    parser.add_argument("--add_svi", action='store_true', help='add svi features')
 
     args = parser.parse_args()
     kwargs = vars(args)  # Convert args to a dictionary
