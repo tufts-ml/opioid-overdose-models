@@ -23,7 +23,7 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
     time_window = lookback_years*timesteps_per_year
     first_train_eval_year = 2013
     last_train_eval_year = 2017
-    batch_dim_size = last_train_eval_year - first_train_eval_year + 1
+    batch_dim_size = (last_train_eval_year - first_train_eval_year + 1)*timesteps_per_year
     validation_year = 2018
     first_test_year = 2019
     last_test_year = 2020
