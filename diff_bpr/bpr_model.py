@@ -88,11 +88,11 @@ class PerturbedBPRLinearModel(PerturbedBPRBaseModel):
         self.lookback_weights = tf.Variable(
             tf.random_uniform_initializer(minval=0.4, maxval=0.6)(shape=(lookback_size, 1),
                                             dtype=tf.float32),
-            trainable=True)
+            trainable=True, name='lookback_weights')
         self.lookback_bias = tf.Variable(
             tf.random_normal_initializer()(shape=(1,),
                                            dtype=tf.float32),
-            trainable=True)
+            trainable=True, name='bias')
 
     def call(self, inputs):
         outputs = tf.linalg.matmul(inputs, self.lookback_weights) + self.lookback_bias
