@@ -19,7 +19,7 @@ def run_exp(noise=None, perturbation_samples=None, learning_rate=None,
     sys.path.append(perturb_code_dir)
     from perturbations import perturbed
 
-    epochs = 5000
+    epochs = 3000
     time_window = lookback_years*timesteps_per_year
     first_train_eval_year = 2013
     last_train_eval_year = 2017
