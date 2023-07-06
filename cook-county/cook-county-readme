@@ -1,1 +1,6 @@
-This folder containes Jyontika's code from summer '23 working on cook county data.
+This folder contains Jyontika's code from summer '23 working on cook county data. 
+
+Things worked on include:
+- downloading the cook county data (2014-2023)
+- downloading census tracts
+- organizing dfs to be in terms of year, semi-annual, and quarterly
