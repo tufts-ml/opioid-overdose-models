@@ -3,8 +3,7 @@ import pandas as pd
 import tensorflow as tf
 from pandas import IndexSlice as idx
 
-import sklearn
-from sklearn.linear_model import LinearRegression
+
 
 from metrics import fast_bpr
 
@@ -93,6 +92,7 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
 
 
 def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
+                 first_pred_time, last_pred_time,
                  timestep_col='timestep',
                  location_col='geoid', outcome_col='deaths',
                  removed_locations=250, seed=360, bpr_uncertainty_samples=50):
@@ -113,7 +113,7 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
     num_sampled = S - removed_locations
     results_over_time = []
 
-    for timestep in range(num_test_times):
+    for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
             outcome_col]
