@@ -132,3 +132,9 @@ dmypy.json
 clean_annual_tract/
 clean_quarter_tract/
 clean_semi_tract/
+
+#svi files
+cook-county-svi-2014.csv/
+cook-county-svi-2016.csv/
+cook-county-svi-2018.csv/
+cook-county-svi-2020.csv/
