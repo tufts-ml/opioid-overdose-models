@@ -43,8 +43,6 @@ def make_data(multiindexed_gdf, first_year, last_year, time_window, feature_cols
             idx[:, min(timesteps_in_year) - time_window:max(timesteps_in_year) - pred_lag], feature_cols]
 
         for t, timestep in enumerate(timesteps_in_year):
-            print(train_x_df.values.shape)
-            print(train_x_df)
             train_x_vals = train_x_df.values.reshape((num_locations, time_window, len(feature_cols)))
 
             # Our y data is just the index and deaths
