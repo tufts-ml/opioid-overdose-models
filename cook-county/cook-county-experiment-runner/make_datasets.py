@@ -39,10 +39,12 @@ def make_data(multiindexed_gdf, first_year, last_year, time_window, feature_cols
         # limit our data to the times and features we care about
         # min(timesteps_in_year) = the first timestep of the first year we want to make predictions for
         # time_window = how many timesteps in our training data
+
         train_x_df = multiindexed_gdf.loc[
             idx[:, min(timesteps_in_year) - time_window:max(timesteps_in_year) - pred_lag], feature_cols]
 
         for t, timestep in enumerate(timesteps_in_year):
+            #import pdb; pdb.set_trace()
             train_x_vals = train_x_df.values.reshape((num_locations, time_window, len(feature_cols)))
 
             # Our y data is just the index and deaths
