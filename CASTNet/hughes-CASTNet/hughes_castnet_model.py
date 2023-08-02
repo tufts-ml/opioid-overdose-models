@@ -50,8 +50,8 @@ class CASTNet:
         tf.compat.v1.disable_eager_execution()
         
         with tf.compat.v1.variable_scope('placeholders'):
-            self.dynamic_input_local = tf.compat.v1.placeholder(tf.float32, [None, self.TIME_STEPS, self.TEMPORAL_FEATURE_SIZE], name='dynamic_local_x')
-            self.dynamic_input_global = tf.compat.v1.placeholder(tf.float32, [None, self.TIME_STEPS, self.NO_LOCATIONS, self.TEMPORAL_FEATURE_SIZE], name='dynamic_global_x')
+            self.svi_input_local = tf.compat.v1.placeholder(tf.float32, [None, self.TIME_STEPS, self.TEMPORAL_FEATURE_SIZE], name='svi_local_x')
+            self.svi_input_global = tf.compat.v1.placeholder(tf.float32, [None, self.TIME_STEPS, self.NO_LOCATIONS, self.TEMPORAL_FEATURE_SIZE], name='svi_global_x')
             self.static_input = tf.compat.v1.placeholder(tf.float32, [None, self.STATIC_FEATURE_SIZE], name='static_x')
             self.sample_indices_input = tf.compat.v1.placeholder(tf.int32, [None], name='indices')
             self.dist_input = tf.compat.v1.placeholder(tf.float32, [None, self.NO_LOCATIONS], name='dist_x')
@@ -160,10 +160,10 @@ class CASTNet:
         self.unstacked_global_spatial_att_outputs_arr = []
         unstacked_global_spatial_att_weights = []
         for i in range(0, self.NO_SPATIAL_HEADS):
-            M = tf.tanh(tf.einsum("baij,jk->baik", self.dynamic_input_global, self.global_spatial_att_input_weights[i]))   #(B, W, L, D)
+            M = tf.tanh(tf.einsum("baij,jk->baik", self.svi_input_global, self.global_spatial_att_input_weights[i]))   #(B, W, L, D)
             a = tf.nn.softmax(tf.einsum("baij,j->bai", M, self.global_spatial_att_w_weights[i]))   #(B, W, L)
             unstacked_global_spatial_att_weights.append(a)
-            r = tf.einsum("baij,bai->baj", self.dynamic_input_global, a)   #(B, W, D)
+            r = tf.einsum("baij,bai->baj", self.svi_input_global, a)   #(B, W, D)
             self.unstacked_global_spatial_att_outputs_arr.append(r)
         
         self.global_spatial_att_weights = tf.stack(unstacked_global_spatial_att_weights)   #(K, B, W, L)
@@ -195,7 +195,7 @@ class CASTNet:
     def _getLocalOutputs(self):
         
         with tf.compat.v1.variable_scope('local_lstm_variables'):
-            x_local = tf.unstack(self.dynamic_input_local, self.TIME_STEPS, 1)
+            x_local = tf.unstack(self.svi_input_local, self.TIME_STEPS, 1)
             local_outputs, local_states = tf.compat.v1.nn.static_rnn(self.local_lstm_cell, x_local, dtype=tf.float32)
             local_outputs_stacked = tf.stack(local_outputs)
             local_outputs_stacked = tf.transpose(local_outputs_stacked, perm=[1, 0, 2])   #(B, T, D)
@@ -309,7 +309,7 @@ class CASTNet:
                          (self.GL_REG_COEF_GLOBAL * self.GL_REG_COEF * tf.reduce_sum([tf.multiply(const_coeff(W), self.l21_norm(W)) for W in self.global_spatial_att_input_weights]))])
     
     
-    def train(self, train_dynamic_local, train_dynamic_global, train_static, train_sample_indices, train_dist, train_y, valid_dynamic_local, valid_dynamic_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_dynamic_local, test_dynamic_global, test_static, test_sample_indices, test_dist, test_y):
+    def train(self, train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y):
         
         self.sess.run(self.tf_init)
         
@@ -317,7 +317,7 @@ class CASTNet:
         
         for epoch in range(0, self.NO_EPOCHS):
             
-            batch_indices = self._get_batches(range(train_dynamic_local.shape[0]))
+            batch_indices = self._get_batches(range(train_svi_local.shape[0]))
             epoch_loss = 0.
             iter_loss = 0.
             
@@ -333,16 +333,16 @@ class CASTNet:
                 
                 batch_idx += 1
                 
-                batch_train_dynamic_local = train_dynamic_local[batch, :, :]
-                batch_train_dynamic_global = train_dynamic_global[batch, :, :, :]
+                batch_train_svi_local = train_svi_local[batch, :, :]
+                batch_train_svi_global = train_svi_global[batch, :, :, :]
                 batch_train_static = train_static[batch]
                 batch_train_sample_indices = train_sample_indices[batch]
                 batch_train_dist = train_dist[batch]
                 batch_train_y = train_y[batch]
 
                 feed_dict = {
-                            self.dynamic_input_local: batch_train_dynamic_local,
-                            self.dynamic_input_global: batch_train_dynamic_global,
+                            self.svi_input_local: batch_train_svi_local,
+                            self.svi_input_global: batch_train_svi_global,
                             self.static_input: batch_train_static,
                             self.sample_indices_input: batch_train_sample_indices, 
                             self.dist_input: batch_train_dist,
@@ -366,10 +366,10 @@ class CASTNet:
                 if ((global_step+1) % self.DISP_ITER) == 0:
                     
                     if(self.TEST_TIME == False):
-                        valid_preds = self.predict(valid_dynamic_local, valid_dynamic_global, valid_static, valid_sample_indices, valid_dist, valid_y)
+                        valid_preds = self.predict(valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y)
                         self.results['preds'].append(valid_preds)
                     elif(self.TEST_TIME == True):
-                        test_preds = self.predict(test_dynamic_local, test_dynamic_global, test_static, test_sample_indices, test_dist, test_y)
+                        test_preds = self.predict(test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
                         self.results['preds'].append(test_preds)
                     
                     self.results['loss'].append(iter_loss / float(self.DISP_ITER))
@@ -391,11 +391,11 @@ class CASTNet:
                 sys.stdout.flush()
     
     
-    def predict(self, dynamic_data_local, dynamic_data_global, static_data, sample_indices, dist_data, target_data):
+    def predict(self, svi_data_local, svi_data_global, static_data, sample_indices, dist_data, target_data):
         
         feed_dict = {
-                    self.dynamic_input_local: dynamic_data_local,
-                    self.dynamic_input_global: dynamic_data_global,
+                    self.svi_input_local: svi_data_local,
+                    self.svi_input_global: svi_data_global,
                     self.static_input: static_data,
                     self.sample_indices_input: sample_indices,
                     self.dist_input: dist_data,

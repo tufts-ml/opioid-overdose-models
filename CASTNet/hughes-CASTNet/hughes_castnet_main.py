@@ -76,31 +76,31 @@ conf.orthogonal_loss_coef = args.orthogonal_loss_coef
 conf.group_lasso = helper.str2bool(args.group_lasso)
 conf.test_time = helper.str2bool(args.test_time)
 
-train_dynamic_local, train_dynamic_global, train_static, train_sample_indices, train_dist, train_y, valid_dynamic_local, valid_dynamic_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_dynamic_local, test_dynamic_global, test_static, test_sample_indices, test_dist, test_y = hughes_data.readData(conf.dataset_name, conf.window_size, conf.lead_time, conf.train_ratio, conf.test_ratio, conf.dist, conf.time_unit)
+train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y = hughes_data.readData(conf.dataset_name, conf.window_size, conf.lead_time, conf.train_ratio, conf.test_ratio, conf.dist, conf.time_unit)
 
 print ('window_size:', conf.window_size, 'lead_time:', conf.lead_time, 'time_unit:', conf.time_unit, 'train_ratio:', conf.train_ratio, 'test_ratio:', conf.test_ratio, 'group_lasso:', conf.group_lasso, 'gl_reg_coef:', conf.gl_reg_coef, 'orthogonal_loss_coef:', conf.orthogonal_loss_coef, 'num_spatial_heads:', conf.num_spatial_heads)
 sys.stdout.flush()
 
 if(conf.test_time == True):
-    train_dynamic_global = np.concatenate([train_dynamic_global, valid_dynamic_global], axis=0)
-    train_dynamic_local = np.concatenate([train_dynamic_local, valid_dynamic_local], axis=0)
+    train_svi_global = np.concatenate([train_svi_global, valid_svi_global], axis=0)
+    train_svi_local = np.concatenate([train_svi_local, valid_svi_local], axis=0)
     train_static = np.concatenate([train_static, valid_static], axis=0)
     train_sample_indices = np.concatenate([train_sample_indices, valid_sample_indices], axis=0)
     train_dist = np.concatenate([train_dist, valid_dist], axis=0)
     train_y = np.concatenate([train_y, valid_y], axis=0)
 
-train_dynamic_global = np.swapaxes(train_dynamic_global, 1, 2)
-valid_dynamic_global = np.swapaxes(valid_dynamic_global, 1, 2)
-test_dynamic_global = np.swapaxes(test_dynamic_global, 1, 2)
+train_svi_global = np.swapaxes(train_svi_global, 1, 2)
+valid_svi_global = np.swapaxes(valid_svi_global, 1, 2)
+test_svi_global = np.swapaxes(test_svi_global, 1, 2)
 
 
-print ('train_dynamic_global:', train_dynamic_global.shape, 'train_dynamic_local:', train_dynamic_local.shape, 'train_static:', train_static.shape, 'train_dist:', train_dist.shape, 'train_y:', train_y.shape)
-print ('valid_dynamic_global:', valid_dynamic_global.shape, 'valid_dynamic_local:', valid_dynamic_local.shape, 'valid_static:', valid_static.shape, 'valid_dist:', valid_dist.shape, 'valid_y:', valid_y.shape)
-print ('test_dynamic_global:', test_dynamic_global.shape, 'test_dynamic_local:', test_dynamic_local.shape, 'test_static:', test_static.shape, 'test_dist:', test_dist.shape, 'test_y:', test_y.shape)
+print ('train_svi_global:', train_svi_global.shape, 'train_svi_local:', train_svi_local.shape, 'train_static:', train_static.shape, 'train_dist:', train_dist.shape, 'train_y:', train_y.shape)
+print ('valid_svi_global:', valid_svi_global.shape, 'valid_svi_local:', valid_svi_local.shape, 'valid_static:', valid_static.shape, 'valid_dist:', valid_dist.shape, 'valid_y:', valid_y.shape)
+print ('test_svi_global:', test_svi_global.shape, 'test_svi_local:', test_svi_local.shape, 'test_static:', test_static.shape, 'test_dist:', test_dist.shape, 'test_y:', test_y.shape)
 
 
-temporal_feature_size = train_dynamic_global.shape[-1]
-no_locations = train_dynamic_global.shape[2]
+temporal_feature_size = train_svi_global.shape[-1]
+no_locations = train_svi_global.shape[2]
 static_feature_size = train_static.shape[1]
 
 conf.temporal_feature_size = temporal_feature_size
@@ -111,7 +111,7 @@ conf.static_feature_size = static_feature_size
 sess = tf.compat.v1.Session()
 
 castnet = hughes_castnet_model.CASTNet(sess = sess, conf = conf)
-castnet.train(train_dynamic_local, train_dynamic_global, train_static, train_sample_indices, train_dist, train_y, valid_dynamic_local, valid_dynamic_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_dynamic_local, test_dynamic_global, test_static, test_sample_indices, test_dist, test_y)
+castnet.train(train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
 
 
 castnet.save_results()
