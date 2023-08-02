@@ -18,7 +18,6 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
 
     #prefix = 'CASTNet-master/Data/' + dataset_name + '/'
     prefix = '/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Data/' +dataset_name + '/'
-    
     locations_path = prefix + 'locations.txt'
     locations_path = prefix + 'locations.txt'
     distances_path = prefix +  'distances.csv'
@@ -129,7 +128,7 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
     
     
     ####################################################################################################
-    ## Normalization of svi svi features #########################################################
+    ## Normalization of svi  features #########################################################
     ####################################################################################################
     for i in range(0, svi_agg.shape[2]):
         mean_values = np.mean(svi_agg[:, :num_train_days, i])
