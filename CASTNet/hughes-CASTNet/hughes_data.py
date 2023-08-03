@@ -13,7 +13,7 @@ import math
 from scipy.stats import entropy
 
 ## dataset_name = [Cincinnati | Chicago]
-## time_unit -> w.r.t days (e.g. time_unit=7 means data aggregated weekly.)
+## time_unit -> w.r.t days (e.g. time_unit=7 means data aggregated weekly.) ## changed this to years (so 1) - jyon.
 def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist, time_unit=1):
 
     #prefix = 'CASTNet-master/Data/' + dataset_name + '/'
@@ -33,44 +33,44 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
             location_numbers.append(line[0])
             locations.append(line[1])
     
-    ################################################################################################
+    # ################################################################################################
     static_features_raw = pd.read_csv(static_features_path)
     static_features = np.zeros(shape=(static_features_raw.shape[1], static_features_raw.shape[0]))
-    for i in range(0, static_features_raw.shape[1]):
-        for j in range(0, static_features_raw.shape[0]):
-            static_features[i][j] = static_features_raw.iloc[j][i]
+    # for i in range(0, static_features_raw.shape[1]):
+    #     for j in range(0, static_features_raw.shape[0]):
+    #         static_features[i][j] = static_features_raw.iloc[j][i]
     
-    #### Normalize population (male, female, race and poverty) ###
-    for i in range(0, static_features.shape[0]):
-        static_features[i][1:11] /= static_features[i][0]
-        static_features[i][13] /= static_features[i][0]
+    # # #### Normalize population (male, female, race and poverty) ###
+    # # for i in range(0, static_features.shape[0]):
+    # #     static_features[i][1:11] /= static_features[i][0]
+    # #     static_features[i][13] /= static_features[i][0]
     
-    static_features[:, 0] = np.log(static_features[:, 0])
-    income_mean = np.mean(static_features[:, 11])
-    income_std = np.std(static_features[:, 11])
-    static_features[:, 11] = static_features[:, 11] - income_mean
-    static_features[:, 11] /= income_std
-    per_capita_mean = np.mean(static_features[:, 12])
-    per_capita_std = np.std(static_features[:, 12])
-    static_features[:,12] = static_features[:, 12] - per_capita_mean
-    static_features[:, 12] /= per_capita_std
-    #################################################################################################
-    new_static_feature_size = 9
-    static_features_new = np.zeros(shape=(static_features_raw.shape[1], new_static_feature_size))
-    static_features_new[:, 0] = (static_features[:, 0] - np.mean(static_features[:, 0])) / np.std(static_features[:, 0])
-    for i in range(0, static_features_new.shape[0]):
-        ## sex-diversity, race_diversity (normalized cross entropy)##
-        static_features_new[i][1] = entropy(static_features[i][1:3]) / np.log(2)
-        static_features_new[i][2] = entropy(static_features[i][3:11]) / np.log(8)
-    static_features_new[:, 3:] = np.copy(static_features[:, 11:])
-    static_features = np.copy(static_features_new)
+    # # static_features[:, 0] = np.log(static_features[:, 0])
+    # # income_mean = np.mean(static_features[:, 11])
+    # # income_std = np.std(static_features[:, 11])
+    # # static_features[:, 11] = static_features[:, 11] - income_mean
+    # # static_features[:, 11] /= income_std
+    # # per_capita_mean = np.mean(static_features[:, 12])
+    # # per_capita_std = np.std(static_features[:, 12])
+    # # static_features[:,12] = static_features[:, 12] - per_capita_mean
+    # # static_features[:, 12] /= per_capita_std
+    # #################################################################################################
+    # new_static_feature_size = 9
+    # static_features_new = np.zeros(shape=(static_features_raw.shape[1], new_static_feature_size))
+    # static_features_new[:, 0] = (static_features[:, 0] - np.mean(static_features[:, 0])) / np.std(static_features[:, 0])
+    # # for i in range(0, static_features_new.shape[0]):
+    # #     ## sex-diversity, race_diversity (normalized cross entropy)##
+    # #     static_features_new[i][1] = entropy(static_features[i][1:3]) / np.log(2)
+    # #     static_features_new[i][2] = entropy(static_features[i][3:11]) / np.log(8)
+    # static_features_new[:, 3:] = np.copy(static_features[:, 11:])
+    # static_features = np.copy(static_features_new)
     #################################################################################################
     
     with open(svi_path, 'rb') as file:
         svi = pickle.load(file, encoding='bytes')
     
-    #print(svi)
-    print(svi.shape)
+    # #print(svi)
+    # print(svi.shape)
 
     with open(od_path, 'rb') as file:
         overdose = pickle.load(file, encoding='bytes')
@@ -96,18 +96,18 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
             
     
     num_time_slots = svi_agg.shape[1]
-    num_days = num_time_slots
-    num_train_days = int(round(num_days * train_ratio))
-    num_test_days = int(round(num_days * test_ratio))
-    num_valid_days = num_days - num_train_days - num_test_days
+    num_years = num_time_slots
+    num_train_years = int(round(num_years * train_ratio))
+    num_test_years = int(round(num_years * test_ratio))
+    num_valid_years = num_years - num_train_years - num_test_years
     
     train_start_index = 0
-    valid_start_index = num_train_days - (window_size + lead_time - 1)
-    test_start_index = num_train_days + num_valid_days - (window_size + lead_time - 1)
+    valid_start_index = num_train_years - (window_size + lead_time - 1)
+    test_start_index = num_train_years + num_valid_years - (window_size + lead_time - 1)
     
     #print train_start_index, valid_start_index
-    #print valid_start_index, test_start_index, '(num_valid_samples):', num_valid_days
-    #print test_start_index, test_start_index + num_test_days, '(num_test_samples):', num_test_days
+    #print valid_start_index, test_start_index, '(num_valid_samples):', num_valid_years
+    #print test_start_index, test_start_index + num_test_years, '(num_test_samples):', num_test_years
     
     distances_row = pd.read_csv(distances_path, header=None)
     distances = distances_row.values
@@ -131,35 +131,49 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
     ## Normalization of svi  features #########################################################
     ####################################################################################################
     for i in range(0, svi_agg.shape[2]):
-        mean_values = np.mean(svi_agg[:, :num_train_days, i])
-        std_values = np.std(svi_agg[:, :num_train_days, i])
+        mean_values = np.mean(svi_agg[:, :num_train_years, i])
+        std_values = np.std(svi_agg[:, :num_train_years, i])
         svi_agg[:, :, i] = (svi_agg[:, :, i] - mean_values) / std_values
     ####################################################################################################
     
-    train_svi_local = np.zeros(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)), window_size, svi_agg.shape[2] + 1))
-    train_svi_global = np.zeros(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)), len(locations), window_size, svi_agg.shape[2] + 1))
-    train_static = np.zeros(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)), static_feature_size))
-    train_sample_indices = np.zeros(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)),))
-    train_dist = np.ones(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)), len(locations)))
-    train_y = np.zeros(shape=(len(locations) * (num_train_days - (window_size + lead_time - 1)), ))
+        # Assuming you have the following variables defined before the problematic line:
+    # num_train_years, window_size, lead_time, svi_agg.shape
+
+    # Print the values of num_train_years, window_size, and lead_time
+    print("num_train_years:", num_train_years)
+    print("window_size:", window_size)
+    print("lead_time:", lead_time)
+
+    # Calculate the difference (num_train_years - (window_size + lead_time - 1))
+    diff = num_train_years - (window_size + lead_time - 1)
+
+    # Print the difference
+    print("Difference (num_train_years - (window_size + lead_time - 1)):", diff)
+
+    train_svi_local = np.zeros(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)), window_size, svi_agg.shape[2] + 1))
+    train_svi_global = np.zeros(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)), len(locations), window_size, svi_agg.shape[2] + 1))
+    train_static = np.zeros(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)), static_feature_size))
+    train_sample_indices = np.zeros(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)),))
+    train_dist = np.ones(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)), len(locations)))
+    train_y = np.zeros(shape=(len(locations) * (num_train_years - (window_size + lead_time - 1)), ))
     
-    valid_svi_local = np.zeros(shape=(len(locations) * num_valid_days, window_size, svi_agg.shape[2] + 1))
-    valid_svi_global = np.zeros(shape=(len(locations) * num_valid_days, len(locations), window_size, svi_agg.shape[2] + 1))
-    valid_static = np.zeros(shape=(len(locations) * num_valid_days, static_feature_size))
-    valid_sample_indices = np.zeros(shape=(len(locations) * num_valid_days,))
-    valid_dist = np.ones(shape=(len(locations) * num_valid_days, len(locations)))
-    valid_y = np.zeros(shape=(len(locations) * num_valid_days, ))
+    valid_svi_local = np.zeros(shape=(len(locations) * num_valid_years, window_size, svi_agg.shape[2] + 1))
+    valid_svi_global = np.zeros(shape=(len(locations) * num_valid_years, len(locations), window_size, svi_agg.shape[2] + 1))
+    valid_static = np.zeros(shape=(len(locations) * num_valid_years, static_feature_size))
+    valid_sample_indices = np.zeros(shape=(len(locations) * num_valid_years,))
+    valid_dist = np.ones(shape=(len(locations) * num_valid_years, len(locations)))
+    valid_y = np.zeros(shape=(len(locations) * num_valid_years, ))
     
-    test_svi_local = np.zeros(shape=(len(locations) * num_test_days, window_size, svi_agg.shape[2] + 1))
-    test_svi_global = np.zeros(shape=(len(locations) * num_test_days, len(locations), window_size, svi_agg.shape[2] + 1))
-    test_static = np.zeros(shape=(len(locations) * num_test_days, static_feature_size))
-    test_sample_indices = np.zeros(shape=(len(locations) * num_test_days,))
-    test_dist = np.ones(shape=(len(locations) * num_test_days, len(locations)))
-    test_y = np.zeros(shape=(len(locations) * num_test_days, ))
+    test_svi_local = np.zeros(shape=(len(locations) * num_test_years, window_size, svi_agg.shape[2] + 1))
+    test_svi_global = np.zeros(shape=(len(locations) * num_test_years, len(locations), window_size, svi_agg.shape[2] + 1))
+    test_static = np.zeros(shape=(len(locations) * num_test_years, static_feature_size))
+    test_sample_indices = np.zeros(shape=(len(locations) * num_test_years,))
+    test_dist = np.ones(shape=(len(locations) * num_test_years, len(locations)))
+    test_y = np.zeros(shape=(len(locations) * num_test_years, ))
     
     
-    od_mean = np.mean(overdose_agg[:, 0:num_train_days])
-    od_std = np.std(overdose_agg[:, 0:num_train_days])
+    od_mean = np.mean(overdose_agg[:, 0:num_train_years])
+    od_std = np.std(overdose_agg[:, 0:num_train_years])
     
     counter = 0
     for l in range(0, len(locations)):
@@ -172,7 +186,11 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
             for k in range(0, window_size):
                 train_svi_local[counter][k] = np.concatenate([svi_agg[l][i+k],
                                                                      np.array([(overdose_agg[l][i+k] - od_mean) / od_std])])
-            train_static[counter] = static_features[l]
+            try:
+                train_static[counter] = static_features[l]
+            except KeyError:
+                print("Error: KeyError occurred with l =", l, "and counter =", counter)
+
             train_sample_indices[counter] = l
             train_dist[counter] = distances[l]
             train_y[counter] = overdose_agg[l][i + window_size + lead_time - 1]
@@ -196,7 +214,7 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
     
     counter = 0
     for l in range(0, len(locations)):
-        for i in range(test_start_index, test_start_index + num_test_days):
+        for i in range(test_start_index, test_start_index + num_test_years):
             for l_neighbor in range(0, len(locations)):
                 for k in range(0, window_size):
                     test_svi_global[counter][l_neighbor][k] = np.concatenate([svi_agg[l_neighbor][i+k], 

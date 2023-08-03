@@ -1,0 +1,2 @@
+model_checkpoint_path: "/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Results"
+all_model_checkpoint_paths: "/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Results"

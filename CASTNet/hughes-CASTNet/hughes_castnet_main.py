@@ -14,12 +14,12 @@ import helper
 
 class Config:
     hidden_layer_size = 32
-    no_epochs = 10
+    no_epochs = 200
     train_ratio = 0.75
     test_ratio = 0.15
-    window_size = 10
+    window_size = 8
     lead_time = 1
-    time_unit = 7
+    time_unit = 1
     group_lasso = False  # True -> gl, False -> no-gl
     dist = None
     gl_reg_coef = None
@@ -50,7 +50,7 @@ parser.add_argument('--control', default='None', type=str)
 
 parser.add_argument('--dataset_name', default='None', type=str)
 parser.add_argument('--hidden_size', default=32, type=int)
-parser.add_argument('--window_size', default=10, type=int)
+parser.add_argument('--window_size', default=3, type=int) #changed to 3 not 10
 parser.add_argument('--lead_time', default=1, type=int)
 parser.add_argument('--gl_reg_coef', default=0.0025, type=float)
 parser.add_argument('--dropout', default=0.1, type=float)
@@ -113,5 +113,11 @@ sess = tf.compat.v1.Session()
 castnet = hughes_castnet_model.CASTNet(sess = sess, conf = conf)
 castnet.train(train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
 
+model_save_path = "/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Results"
+castnet.save(model_save_path)
+
+# Make predictions on the test data
+predictions = castnet.predict(test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
+print("Predictions:", predictions)
 
 castnet.save_results()
