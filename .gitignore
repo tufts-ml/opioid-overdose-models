@@ -133,20 +133,19 @@ clean_annual_tract/
 clean_quarter_tract/
 clean_semi_tract/
 
-#svi files
-cook-county-svi-data/
-
 #CASTNet Master
 CASTNet-master/
 
-#shapefiles
-cook-county/cleaning-cook-county/files
+#data, which is on cluster
+cook-county-data
 
-cook-county/cleaning-cook-county/data 
-
+/cook-county/cleaning-cook-county/cook_county_gdf_quarterly.csv
+/cook-county/cleaning-cook-county/cook_county_gdf_annual.csv
+/cook-county/cleaning-cook-county/cook_county_gdf_semiannual.csv
 # Other
 .DS_Store
 
 # Kyle's
 notebooks/
 zinf_gp/
+
