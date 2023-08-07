@@ -174,7 +174,7 @@ def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist
     
     od_mean = np.mean(overdose_agg[:, 0:num_train_years])
     od_std = np.std(overdose_agg[:, 0:num_train_years])
-    
+
     counter = 0
     for l in range(0, len(locations)):
         for i in range(train_start_index, valid_start_index):

@@ -14,7 +14,7 @@ import helper
 
 class Config:
     hidden_layer_size = 32
-    no_epochs = 200
+    no_epochs = 20
     train_ratio = 0.75
     test_ratio = 0.15
     window_size = 8

@@ -259,21 +259,21 @@ class CASTNet:
         
         return loss
     
-    
-    def _get_batches(self, lst):
-        lst = list(lst)
-        data_size = len(lst)
-        random.shuffle(lst)
+    #randomly shuffles a given list of indices and generates batches of those indices with a specified batch size
+    # def _get_batches(self, lst):
+    #     lst = list(lst)
+    #     data_size = len(lst)
+    #     random.shuffle(lst)
         
-        if data_size % self.BATCH_SIZE > 0:
-            num_batches = int(data_size / self.BATCH_SIZE) + 1
-        else:
-            num_batches = int(data_size / self.BATCH_SIZE)
+    #     if data_size % self.BATCH_SIZE > 0:
+    #         num_batches = int(data_size / self.BATCH_SIZE) + 1
+    #     else:
+    #         num_batches = int(data_size / self.BATCH_SIZE)
                 
-        for batch_num in range(num_batches):
-            start_index = batch_num * self.BATCH_SIZE
-            end_index = min((batch_num + 1) * self.BATCH_SIZE, data_size)
-            yield lst[start_index:end_index]
+    #     for batch_num in range(num_batches):
+    #         start_index = batch_num * self.BATCH_SIZE
+    #         end_index = min((batch_num + 1) * self.BATCH_SIZE, data_size)
+    #         yield lst[start_index:end_index]
     
     
     def _loc_emb_query(self):
@@ -308,16 +308,18 @@ class CASTNet:
                          (self.GL_REG_COEF_LOCAL * self.GL_REG_COEF * tf.reduce_sum([tf.multiply(const_coeff(W), self.l21_norm(W)) for W in local_lstms])),
                          (self.GL_REG_COEF_GLOBAL * self.GL_REG_COEF * tf.reduce_sum([tf.multiply(const_coeff(W), self.l21_norm(W)) for W in self.global_spatial_att_input_weights]))])
     
-    
+
+              
+    #updated for no batches        
     def train(self, train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y):
         
         self.sess.run(self.tf_init)
-        
         self.save_model_idx = 0
         
         for epoch in range(0, self.NO_EPOCHS):
             
-            batch_indices = self._get_batches(range(train_svi_local.shape[0]))
+            locations = train_svi_local.shape[0]
+            print(locations)
             epoch_loss = 0.
             iter_loss = 0.
             
@@ -328,27 +330,20 @@ class CASTNet:
             epoch_gl_loss = 0.
             epoch_orthogonal_loss = 0.
             
-            batch_idx = 0
-            for batch in batch_indices:
+            idx = 0
+            for idx in range(locations+1):
                 
-                batch_idx += 1
-                
-                batch_train_svi_local = train_svi_local[batch, :, :]
-                batch_train_svi_global = train_svi_global[batch, :, :, :]
-                batch_train_static = train_static[batch]
-                batch_train_sample_indices = train_sample_indices[batch]
-                batch_train_dist = train_dist[batch]
-                batch_train_y = train_y[batch]
+                idx += 1
 
                 feed_dict = {
-                            self.svi_input_local: batch_train_svi_local,
-                            self.svi_input_global: batch_train_svi_global,
-                            self.static_input: batch_train_static,
-                            self.sample_indices_input: batch_train_sample_indices, 
-                            self.dist_input: batch_train_dist,
-                            self.target: batch_train_y,
+                            self.svi_input_local: train_svi_local,
+                            self.svi_input_global: train_svi_global,
+                            self.static_input: train_static,
+                            self.sample_indices_input: train_sample_indices,
+                            self.dist_input: train_dist,
+                            self.target: train_y,
                             self.keep_prob: self.RNN_DROPOUT
-                        }
+                            }
                 
                 _, loss_, global_step, regression_loss, gl_loss, orthogonal_loss = self.sess.run([self.train_op, self.loss, self.global_step, self.regression_loss, self.gl_loss, self.orthogonal_loss], feed_dict=feed_dict)
                 
@@ -380,10 +375,10 @@ class CASTNet:
                     iter_gl_loss = 0.
                     iter_orthogonal_loss = 0.
             
-            epoch_loss /= float(batch_idx)
-            epoch_regression_loss /= float(batch_idx)
-            epoch_gl_loss /= float(batch_idx)
-            epoch_orthogonal_loss /= float(batch_idx)
+            epoch_loss /= float(locations)
+            epoch_regression_loss /= float(locations)
+            epoch_gl_loss /= float(locations)
+            epoch_orthogonal_loss /= float(locations)
             
             if ((epoch+1) % 1) == 0:
                 print ("Epoch: {}, total_loss: {}, regres_loss: {}, gl_loss: {}, ortho_loss: {}".format(epoch+1, round(epoch_loss, 3), round(epoch_regression_loss, 3), round(epoch_gl_loss, 3), round(epoch_orthogonal_loss, 3)))
