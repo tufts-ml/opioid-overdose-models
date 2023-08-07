@@ -143,3 +143,10 @@ CASTNet-master/
 cook-county/cleaning-cook-county/files
 
 cook-county/cleaning-cook-county/data 
+
+# Other
+.DS_Store
+
+# Kyle's
+notebooks/
+zinf_gp/
