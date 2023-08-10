@@ -22,32 +22,22 @@ def fast_bpr(true_val, pred_val, K=100, bootstrap_samples=1000):
     tied_top_true = true_val[true_val == top_K_true.min()]
 
     # now randomly choose locations from the tied spots
-    # bootstrapped_tied_indices = np.random.choice(tied_top_predicted.index, (bootstrap_samples, num_tied_spots))
-    # undisputed_pred_idx = undisputed_top_predicted.index.values
-    # bootstrapped_all_indices = [np.concatenate((undisputed_pred_idx, bootstrap_index))
-    #                             for bootstrap_index in bootstrapped_tied_indices]
-    if len(tied_top_predicted.index) > 0:
-        bootstrapped_tied_indices = np.random.choice(tied_top_predicted.index, (bootstrap_samples, num_tied_spots))
-    else:
-        bootstrapped_tied_indices = []
+    bootstrapped_tied_indices = np.random.choice(tied_top_predicted.index, (bootstrap_samples, num_tied_spots))
+    undisputed_pred_idx = undisputed_top_predicted.index.values
+    bootstrapped_all_indices = [np.concatenate((undisputed_pred_idx, bootstrap_index))
+                                for bootstrap_index in bootstrapped_tied_indices]
+
 
     undisputed_pred_idx = undisputed_top_predicted.index.values
     bootstrapped_all_indices = [np.concatenate((undisputed_pred_idx, bootstrap_index))
                                 for bootstrap_index in bootstrapped_tied_indices]
 
 
-    # denominator =  top_K_true.sum()
-    # numerators = [true_val[indicies].sum() for indicies in bootstrapped_all_indices]
+    denominator =  top_K_true.sum()
+    numerators = [true_val[indicies].sum() for indicies in bootstrapped_all_indices]
 
-    # bootstrapped_ratio = np.mean([numerator / denominator
-    #                               for numerator in numerators])
-
-    denominator = top_K_true.sum()
-    numerators = [true_val[indicies].sum() for indicies in bootstrapped_all_indices if len(indicies) > 0]
-
-    if len(numerators) > 0:
-        bootstrapped_ratio = np.mean([numerator / denominator for numerator in numerators])
-    else:
-        bootstrapped_ratio = 0.0  
+    bootstrapped_ratio = np.mean([numerator / denominator
+                                   for numerator in numerators])
+ 
 
     return bootstrapped_ratio

@@ -137,7 +137,7 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
 
 #import CASTNet Results 
-data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
+data_dir = '../../CASTNet/hughes-CASTNet/'
 results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv')
 CN_results = pd.read_csv(results_path)
 
