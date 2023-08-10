@@ -13,8 +13,6 @@ TigerLine Shapefiles: https://www.census.gov/geographies/mapping-files/time-seri
 ---
 Note that all notebooks write to same CSV files: (i) annual, (ii) quarterly, (iii) semiannually
 The order in which I run these notebooks is: intro --> annual, quarter, semi --> SVI
----
-This folder also includes cook-county-summary-stats which calculates sparsity rates and other summary stats
 
-the cook-county-features file is mostly to create features file for CASTNet, which is located in a different molder
-
+--
+cook-county-experiment-runner calculates BPR, RMSE, and MAE for cook county

@@ -12,12 +12,14 @@ import sys
 import math
 from scipy.stats import entropy
 
-## dataset_name = [Cincinnati | Chicago]
+## dataset_name = [MA | Chicago]
 ## time_unit -> w.r.t days (e.g. time_unit=7 means data aggregated weekly.) ## changed this to years (so 1) - jyon.
 def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist, time_unit=1):
 
     #prefix = 'CASTNet-master/Data/' + dataset_name + '/'
-    prefix = '/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Data/' +dataset_name + '/'
+    my_path = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
+    prefix = os.path.join(my_path, 'Data/')
+    prefix = prefix + dataset_name + '/'
     locations_path = prefix + 'locations.txt'
     locations_path = prefix + 'locations.txt'
     distances_path = prefix +  'distances.csv'

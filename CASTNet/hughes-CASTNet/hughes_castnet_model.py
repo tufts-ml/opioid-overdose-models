@@ -260,20 +260,20 @@ class CASTNet:
         return loss
     
     #randomly shuffles a given list of indices and generates batches of those indices with a specified batch size
-    # def _get_batches(self, lst):
-    #     lst = list(lst)
-    #     data_size = len(lst)
-    #     random.shuffle(lst)
+    def _get_batches(self, lst):
+        lst = list(lst)
+        data_size = len(lst)
+        random.shuffle(lst)
         
-    #     if data_size % self.BATCH_SIZE > 0:
-    #         num_batches = int(data_size / self.BATCH_SIZE) + 1
-    #     else:
-    #         num_batches = int(data_size / self.BATCH_SIZE)
+        if data_size % self.BATCH_SIZE > 0:
+            num_batches = int(data_size / self.BATCH_SIZE) + 1
+        else:
+            num_batches = int(data_size / self.BATCH_SIZE)
                 
-    #     for batch_num in range(num_batches):
-    #         start_index = batch_num * self.BATCH_SIZE
-    #         end_index = min((batch_num + 1) * self.BATCH_SIZE, data_size)
-    #         yield lst[start_index:end_index]
+        for batch_num in range(num_batches):
+            start_index = batch_num * self.BATCH_SIZE
+            end_index = min((batch_num + 1) * self.BATCH_SIZE, data_size)
+            yield lst[start_index:end_index]
     
     
     def _loc_emb_query(self):
@@ -309,20 +309,21 @@ class CASTNet:
                          (self.GL_REG_COEF_GLOBAL * self.GL_REG_COEF * tf.reduce_sum([tf.multiply(const_coeff(W), self.l21_norm(W)) for W in self.global_spatial_att_input_weights]))])
     
 
-              
-    #updated for no batches        
-    def train(self, train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y):
-        
+    #set 'batches' to true or false here
+    def train(self, train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y, batches=True):
         self.sess.run(self.tf_init)
         self.save_model_idx = 0
         
         for epoch in range(0, self.NO_EPOCHS):
+            if batches:
+                indices = self._get_batches(range(train_svi_local.shape[0]))
+            else:
+                indices = range(train_svi_local.shape[0]) #should be 1328 x num of lookback years
             
-            locations = train_svi_local.shape[0]
-            print(locations)
             epoch_loss = 0.
             iter_loss = 0.
-            
+            iter_loss = 0.
+
             iter_regression_loss = 0.
             iter_gl_loss = 0.
             iter_orthogonal_loss = 0.
@@ -331,11 +332,28 @@ class CASTNet:
             epoch_orthogonal_loss = 0.
             
             idx = 0
-            for idx in range(locations+1):
-                
+            for i in indices:
                 idx += 1
+                if batches:
+                    batch_train_svi_local = train_svi_local[i, :, :]
+                    batch_train_svi_global = train_svi_global[i, :, :, :]
+                    batch_train_static = train_static[i]
+                    batch_train_sample_indices = train_sample_indices[i]
+                    batch_train_dist = train_dist[i]
+                    batch_train_y = train_y[i]
 
-                feed_dict = {
+                    feed_dict = {
+                                self.svi_input_local: batch_train_svi_local,
+                                self.svi_input_global: batch_train_svi_global,
+                                self.static_input: batch_train_static,
+                                self.sample_indices_input: batch_train_sample_indices, 
+                                self.dist_input: batch_train_dist,
+                                self.target: batch_train_y,
+                                self.keep_prob: self.RNN_DROPOUT
+                            }
+                
+                else:
+                    feed_dict = {
                             self.svi_input_local: train_svi_local,
                             self.svi_input_global: train_svi_global,
                             self.static_input: train_static,
@@ -344,7 +362,7 @@ class CASTNet:
                             self.target: train_y,
                             self.keep_prob: self.RNN_DROPOUT
                             }
-                
+                    
                 _, loss_, global_step, regression_loss, gl_loss, orthogonal_loss = self.sess.run([self.train_op, self.loss, self.global_step, self.regression_loss, self.gl_loss, self.orthogonal_loss], feed_dict=feed_dict)
                 
                 iter_loss += loss_
@@ -374,17 +392,17 @@ class CASTNet:
                     iter_regression_loss = 0.
                     iter_gl_loss = 0.
                     iter_orthogonal_loss = 0.
-            
-            epoch_loss /= float(locations)
-            epoch_regression_loss /= float(locations)
-            epoch_gl_loss /= float(locations)
-            epoch_orthogonal_loss /= float(locations)
-            
+
+            epoch_loss /= float(idx)
+            epoch_regression_loss /= float(idx)
+            epoch_gl_loss /= float(idx)
+            epoch_orthogonal_loss /= float(idx)
+                    
             if ((epoch+1) % 1) == 0:
                 print ("Epoch: {}, total_loss: {}, regres_loss: {}, gl_loss: {}, ortho_loss: {}".format(epoch+1, round(epoch_loss, 3), round(epoch_regression_loss, 3), round(epoch_gl_loss, 3), round(epoch_orthogonal_loss, 3)))
                 print ('-----------------------------------------------------------------------------')
                 sys.stdout.flush()
-    
+
     
     def predict(self, svi_data_local, svi_data_global, static_data, sample_indices, dist_data, target_data):
         
@@ -405,7 +423,8 @@ class CASTNet:
         if not os.path.exists("Results"):
             os.mkdir("Results")
         
-        save_path = 'Results/' + self.DATASET_NAME + '_test_time_' + str(self.TEST_TIME) + '.pkl'
+        #save_path = 'Results/' + self.DATASET_NAME + '_test_time_' + str(self.TEST_TIME) + '.pkl'
+        save_path = 'Results/' + self.DATASET_NAME + '_lead_time' + str(self.LEAD_TIME) + '.pkl' 
         with open(save_path, 'wb') as f:
             pickle.dump(self.results, f)
     

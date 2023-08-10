@@ -14,11 +14,11 @@ import helper
 
 class Config:
     hidden_layer_size = 32
-    no_epochs = 20
+    no_epochs = 300
     train_ratio = 0.75
     test_ratio = 0.15
     window_size = 8
-    lead_time = 1
+    lead_time = 2
     time_unit = 1
     group_lasso = False  # True -> gl, False -> no-gl
     dist = None
@@ -28,7 +28,7 @@ class Config:
     static_feature_size = None
     no_locations = None
     batch_size = 50
-    learning_rate = 0.001
+    learning_rate = 0.005
     embedding_size = 32
     test_time = False
     dataset_name = None
@@ -51,7 +51,7 @@ parser.add_argument('--control', default='None', type=str)
 parser.add_argument('--dataset_name', default='None', type=str)
 parser.add_argument('--hidden_size', default=32, type=int)
 parser.add_argument('--window_size', default=3, type=int) #changed to 3 not 10
-parser.add_argument('--lead_time', default=1, type=int)
+parser.add_argument('--lead_time', default=2, type=int)
 parser.add_argument('--gl_reg_coef', default=0.0025, type=float)
 parser.add_argument('--dropout', default=0.1, type=float)
 parser.add_argument('--group_lasso', default='True', type=str)
@@ -64,7 +64,7 @@ parser.add_argument('--orthogonal_loss_coef', default=0.01, type=float)
 args, _ = parser.parse_known_args()
 
 # conf.dataset_name = args.dataset_name
-conf.dataset_name = "Chicago"
+conf.dataset_name = "MA"
 conf.hidden_size = args.hidden_size
 conf.window_size = args.window_size
 conf.lead_time = args.lead_time
@@ -113,11 +113,8 @@ sess = tf.compat.v1.Session()
 castnet = hughes_castnet_model.CASTNet(sess = sess, conf = conf)
 castnet.train(train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
 
-model_save_path = "/Users/jyontika/Desktop/Python/github_hughes/opioid-overdose-models/CASTNet/hughes-CASTNet/Results"
+data_dir = "/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/"
+model_save_path = os.path.join(data_dir, 'Results')
 castnet.save(model_save_path)
-
-# Make predictions on the test data
-predictions = castnet.predict(test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
-print("Predictions:", predictions)
 
 castnet.save_results()
