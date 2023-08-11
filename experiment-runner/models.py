@@ -123,7 +123,8 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
             outcome_col]
 
-        prediction = reg.predict(test_x_BSF[0])
+        #prediction = reg.predict(test_x_BSF[0])
+        prediction = reg.predict(test_x_BSF[timestep - first_pred_time])
         output_deaths.append(prediction)
 
         results_over_samples = []
