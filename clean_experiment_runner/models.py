@@ -6,6 +6,8 @@ from pandas import IndexSlice as idx
 
 
 from metrics import fast_bpr
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from math import sqrt
 
 
 def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations, timestep_col='timestep',
@@ -14,21 +16,29 @@ def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_loca
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
-    results_over_time = []
+    bpr_over_time = []
+    mae_over_time = []
+    rmse_over_time = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
 
-        results_over_samples = []
+        bpr_over_samples = []
+        rmse_over_samples = []
+        mae_over_samples = []
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
+            bpr_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
+            mae_over_samples.append(mean_absolute_error(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
+            rmse_over_samples.append(sqrt(mean_squared_error(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0)))
+            
+        bpr_over_time.append(bpr_over_samples)
+        mae_over_time.append(mae_over_samples)
+        rmse_over_time.append(rmse_over_samples)
 
-        results_over_time.append(results_over_samples)
-
-    return results_over_time
+    return bpr_over_time, mae_over_time, rmse_over_time
 
 
 def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
@@ -40,7 +50,9 @@ def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locat
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
-    results_over_time = []
+    bpr_over_time = []
+    mae_over_time = []
+    rmse_over_time = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -50,15 +62,21 @@ def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locat
         predicted_deaths = predicted_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
             outcome_col]
 
-        results_over_samples = []
+        bpr_over_samples = []
+        rmse_over_samples = []
+        mae_over_samples = []
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            bpr_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            mae_over_samples.append(mean_absolute_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            rmse_over_samples.append(sqrt(mean_squared_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies])))
 
-        results_over_time.append(results_over_samples)
+        bpr_over_time.append(bpr_over_samples)
+        mae_over_time.append(mae_over_samples)
+        rmse_over_time.append(rmse_over_samples)
 
-    return results_over_time
+    return bpr_over_time, mae_over_time, rmse_over_time
 
 def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
                      pred_lag, window_length,
@@ -70,7 +88,9 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
-    results_over_time = []
+    bpr_over_time = []
+    mae_over_time = []
+    rmse_over_time = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -80,15 +100,21 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
                                              (multiindexed_gdf[timestep_col]>timestep-pred_lag-window_length)]
         predicted_deaths = predicted_deaths.groupby(level='geoid')['deaths'].mean()
 
-        results_over_samples = []
+        bpr_over_samples = []
+        rmse_over_samples = []
+        mae_over_samples = []
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            bpr_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            mae_over_samples.append(mean_absolute_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            rmse_over_samples.append(sqrt(mean_squared_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies])))
 
-        results_over_time.append(results_over_samples)
+        bpr_over_time.append(bpr_over_samples)
+        mae_over_time.append(mae_over_samples)
+        rmse_over_time.append(rmse_over_samples)
 
-    return results_over_time
+    return bpr_over_time, mae_over_time, rmse_over_time
 
 
 def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
@@ -111,27 +137,31 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = S - removed_locations
-    results_over_time = []
+    bpr_over_time = []
+    mae_over_time = []
+    rmse_over_time = []
 
-    for timestep in range(first_pred_time, last_pred_time+1):
+    for t, timestep in enumerate(range(first_pred_time, last_pred_time+1)):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
             outcome_col]
 
-        prediction = reg.predict(test_x_BSF[0])
+        prediction = reg.predict(test_x_BSF[t])
+        predicted_deaths = pd.Series(prediction, index=evaluation_deaths.index)
 
-        results_over_samples = []
+        bpr_over_samples = []
+        rmse_over_samples = []
+        mae_over_samples = []
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(S), size=num_sampled, replace=False)
 
-            results_over_samples.append(
-                fast_bpr(evaluation_deaths[sampled_indicies],
-                         pd.Series(prediction[sampled_indicies],
-                                   index=evaluation_deaths[sampled_indicies].index)
-                         )
-            )
+            bpr_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            mae_over_samples.append(mean_absolute_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies]))
+            rmse_over_samples.append(sqrt(mean_squared_error(evaluation_deaths[sampled_indicies], predicted_deaths[sampled_indicies])))
 
-        results_over_time.append(results_over_samples)
+        bpr_over_time.append(bpr_over_samples)
+        mae_over_time.append(mae_over_samples)
+        rmse_over_time.append(rmse_over_samples)
 
-    return results_over_time
+    return bpr_over_time, mae_over_time, rmse_over_time
