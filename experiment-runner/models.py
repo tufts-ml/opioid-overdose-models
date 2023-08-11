@@ -14,19 +14,21 @@ def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_loca
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     results_over_time = []
+    output_deaths=[]
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
-
         results_over_samples = []
+        output_deaths.append(evaluation_deaths*0)
+
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
             results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, evaluation_deaths[sampled_indicies]*0
+    return results_over_time, output_deaths
 
 
 def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
@@ -39,6 +41,7 @@ def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locat
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     results_over_time = []
+    output_deaths =[]
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -47,6 +50,7 @@ def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locat
         predicted_deaths = multiindexed_gdf.loc[idx[:, timestep-pred_lag], :]
         predicted_deaths = predicted_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
             outcome_col]
+        output_deaths.append(predicted_deaths)
 
         results_over_samples = []
 
@@ -56,7 +60,7 @@ def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locat
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, predicted_deaths[sampled_indicies]
+    return results_over_time, output_deaths
 
 def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
                      pred_lag, window_length,
@@ -69,6 +73,7 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     results_over_time = []
+    output_deaths = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -77,6 +82,7 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
         predicted_deaths =  multiindexed_gdf[(multiindexed_gdf[timestep_col]<=timestep-pred_lag) &
                                              (multiindexed_gdf[timestep_col]>timestep-pred_lag-window_length)]
         predicted_deaths = predicted_deaths.groupby(level='geoid')['deaths'].mean()
+        output_deaths.append(predicted_deaths)
 
         results_over_samples = []
 
@@ -86,7 +92,7 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time,  predicted_deaths[sampled_indicies]
+    return results_over_time,  output_deaths
 
 
 def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
@@ -110,6 +116,7 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
     rng = np.random.default_rng(seed=seed)
     num_sampled = S - removed_locations
     results_over_time = []
+    output_deaths = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -117,6 +124,7 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
             outcome_col]
 
         prediction = reg.predict(test_x_BSF[0])
+        output_deaths.append(prediction)
 
         results_over_samples = []
 
@@ -132,19 +140,19 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, pd.Series(prediction[sampled_indicies])
+    return results_over_time, output_deaths
 
 
 ###################
 
 #import CASTNet Results 
 data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-results_path = os.path.join(data_dir, 'Results/MA-predictions.csv') #change to Chicago or MA depending on which you want to run
+results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv') #change to cook-county or MA depending on which you want to run
 CN_results = pd.read_csv(results_path)
 CN_results['geoid'] = CN_results['geoid'].astype(str)
 
 #import CASTNet locations
-locations_path = os.path.join(data_dir, 'Data/MA/locations.txt')  #change to Chicago or MA depending on which you want to run
+locations_path = os.path.join(data_dir, 'Data/Chicago/locations.txt')  #change to Chicago or MA depending on which you want to run
 
 CN_locations = []
 with open(locations_path, 'rb') as file:
@@ -162,15 +170,17 @@ def castnet_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locatio
     """
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
-
+    output_deaths=[]
     results_over_time = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
 
-        current_year = 2000 + timestep
+        current_year = 2014 + timestep #2000 for MA, 2014 for cook county
         predicted_deaths_df = CN_results[(CN_results['year'] == current_year) & (CN_results['geoid'].isin(CN_locations))]
+        output_deaths.append(predicted_deaths_df['prediction'].to_numpy())
+    
 
         if CN_locations is not None:
             # Match the order of locations with the order of data
@@ -191,7 +201,7 @@ def castnet_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locatio
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, predicted_deaths_sampled
+    return results_over_time, output_deaths
 
 
 
