@@ -5,8 +5,9 @@ import scipy.stats as stats
 
 def calculate_metrics(actual_values, predicted_deaths, first_test_timestep, last_test_timestep, num_uncertainty_samples, 
                       confidence_level=0.95):
-        """Returns joint RMSE and joint MAE alongside confidence interval
-        @num_uncertainty_samples should be SAME as bpr_uncertainty for that model
+        """
+        @Return: joint RMSE and joint MAE alongside confidence interval
+        @param: num_uncertainty_samples should be SAME as bpr_uncertainty for that model
         """
 
         num_years = last_test_timestep - first_test_timestep + 1
@@ -47,5 +48,6 @@ def calculate_metrics(actual_values, predicted_deaths, first_test_timestep, last
 
 ###HElPER function to print results
 def print_results(metric_name, mean_value, confidence_interval, confidence_level=0.95):
+    '''Prints results from calculate_metrics'''
     print(f"{metric_name} (Mean, {confidence_level*100:.0f}% CI): {mean_value:.2f}, "
           f"({confidence_interval[0]:.2f}-{confidence_interval[1]:.2f})")
