@@ -96,9 +96,10 @@ def historical_average_model(multiindexed_gdf, first_pred_time, last_pred_time, 
             output_deaths.append(predicted_deaths[sampled_indicies])
             actual_deaths.append(evaluation_deaths[sampled_indicies])
 
+
         results_over_time.append(results_over_samples)
 
-    return results_over_time,  actual_deaths, output_deaths
+    return results_over_time, actual_deaths, output_deaths
 
 
 def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
@@ -125,6 +126,8 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
     output_deaths = []
     actual_deaths = []
 
+    high_prediction_threshold = 50  # Adjust this threshold as needed
+
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[
@@ -132,8 +135,6 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
         #prediction = reg.predict(test_x_BSF[0])
         prediction = reg.predict(test_x_BSF[timestep - first_pred_time])
-        print(prediction)
-
         results_over_samples = []
 
         for _ in range(bpr_uncertainty_samples):
@@ -146,8 +147,15 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
                          )
             )
 
-            output_deaths.append(prediction[sampled_indicies])
-            actual_deaths.append(evaluation_deaths[sampled_indicies])
+            actual_deaths.append(evaluation_deaths[sampled_indicies]) #append actual death
+
+            #try to change high predictions to 20, for test purposes
+            if np.max(prediction[sampled_indicies]) <= high_prediction_threshold:
+                output_deaths.append(prediction[sampled_indicies])
+            else:
+                new_prediction = np.where(prediction[sampled_indicies] <= high_prediction_threshold, 
+                                   prediction[sampled_indicies], 40)
+                output_deaths.append(new_prediction)
 
         results_over_time.append(results_over_samples)
 
@@ -158,12 +166,12 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
 #import CASTNet Results 
 data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-results_path = os.path.join(data_dir, 'Results/MA-predictions.csv') #change to cook-county or MA depending on which you want to run
+results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv') #change to cook-county or MA depending on which you want to run
 CN_results = pd.read_csv(results_path)
 CN_results['geoid'] = CN_results['geoid'].astype(str)
 
 #import CASTNet locations
-locations_path = os.path.join(data_dir, 'Data/MA/locations.txt')  #change to Chicago or MA depending on which you want to run
+locations_path = os.path.join(data_dir, 'Data/Chicago/locations.txt')  #change to Chicago or MA depending on which you want to run
 
 CN_locations = []
 with open(locations_path, 'rb') as file:
@@ -189,7 +197,7 @@ def castnet_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locatio
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
 
-        current_year = 2000 + timestep #2000 for MA, 2014 for cook county
+        current_year = 2014 + timestep #2000 for MA, 2014 for cook county
         predicted_deaths_df = CN_results[(CN_results['year'] == current_year) & (CN_results['geoid'].isin(CN_locations))]
     
 
