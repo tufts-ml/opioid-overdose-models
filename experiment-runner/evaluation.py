@@ -7,14 +7,19 @@ def calculate_metrics(actual_values, predicted_deaths, first_test_timestep, last
                       confidence_level=0.95):
         """
         @Return: joint RMSE and joint MAE alongside confidence interval
-        @param: num_uncertainty_samples should be SAME as bpr_uncertainty for that model
+        @param: num_uncertainty_samples: The number of samples for uncertainty estimation
+        num_uncertainty_samples should be SAME as bpr_uncertainty for that model
+
         """
 
         num_years = last_test_timestep - first_test_timestep + 1
         num_samples = num_uncertainty_samples
 
-        joint_rmse_values = []
+        #initialize lists to store values for each year
+        joint_rmse_values = [] 
         joint_mae_values = []
+
+        #calculate metrics fir each year across diff. samples of predicted values and actual values
 
         for year_idx in range(num_years):
             year_actual_values = actual_values[year_idx]
@@ -32,9 +37,11 @@ def calculate_metrics(actual_values, predicted_deaths, first_test_timestep, last
                 mae_samples = np.mean(np.abs(samples - year_actual_values))
                 year_mae_values.append(mae_samples)
 
+            #aggregate  values to form the joint RMSE and joint MAE metrics
             joint_rmse_values.extend(year_rmse_values)
             joint_mae_values.extend(year_mae_values)
 
+        #calculate mean and confidence interval (95%) based off joint rmse/mae vals
         joint_rmse_mean = np.mean(joint_rmse_values)
         joint_rmse_conf_interval = stats.t.interval(confidence_level, len(joint_rmse_values) - 1, loc=joint_rmse_mean,
                                                     scale=stats.sem(joint_rmse_values))

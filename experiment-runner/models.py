@@ -164,29 +164,36 @@ def scikit_model(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, model,
 
 ###################
 
-#import CASTNet Results 
-data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv') #change to cook-county or MA depending on which you want to run
-CN_results = pd.read_csv(results_path)
-CN_results['geoid'] = CN_results['geoid'].astype(str)
-
-#import CASTNet locations
-locations_path = os.path.join(data_dir, 'Data/Chicago/locations.txt')  #change to Chicago or MA depending on which you want to run
-
-CN_locations = []
-with open(locations_path, 'rb') as file:
-    for line in file:
-        line = line.rstrip().decode("utf-8").split("\t")
-        CN_locations.append(line[1])
-
-def castnet_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
-                    timestep_col='timestep',
+def castnet_model(multiindexed_gdf, Cook, first_pred_time, last_pred_time, num_locations,
+                    timestep_col='timestep', 
                     location_col='geoid', outcome_col='deaths', removed_locations=250, 
                     bpr_uncertainty_samples=50, seed=360, locations=None):
     """
     Calculate BPR for CASTNet predictions.
+    @Cook is true if calculating cook county, False if calculating MA
     @return: List of BPR results over time and samples
     """
+
+    #import results for either MA or cook county
+    if Cook:
+        data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
+        results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv') 
+        locations_path = os.path.join(data_dir, 'Data/Chicago/locations.txt')
+    else:
+        data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
+        results_path = os.path.join(data_dir, 'Results/MA-predictions.csv') 
+        locations_path = os.path.join(data_dir, 'Data/MA/locations.txt')
+
+    CN_results = pd.read_csv(results_path)
+    CN_results['geoid'] = CN_results['geoid'].astype(str)
+
+    CN_locations = []
+    with open(locations_path, 'rb') as file:
+        for line in file:
+            line = line.rstrip().decode("utf-8").split("\t")
+            CN_locations.append(line[1])
+
+    #now we can sample and calculate bpr
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     output_deaths=[]
@@ -197,7 +204,11 @@ def castnet_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locatio
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
 
-        current_year = 2014 + timestep #2000 for MA, 2014 for cook county
+        if Cook:
+            current_year = 2014 + timestep
+        else:
+             current_year = 2000 + timestep
+             
         predicted_deaths_df = CN_results[(CN_results['year'] == current_year) & (CN_results['geoid'].isin(CN_locations))]
     
 
