@@ -17,8 +17,8 @@ from scipy.stats import entropy
 def readData(dataset_name, window_size, lead_time, train_ratio, test_ratio, dist, time_unit=1):
 
     #prefix = 'CASTNet-master/Data/' + dataset_name + '/'
-    my_path = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-    prefix = os.path.join(my_path, 'Data/')
+    user_path = '/Users/jyontika/Desktop/'
+    prefix = os.path.join(user_path, 'opioid-overdose-models/CASTNet/hughes-CASTNet/Data/')
     prefix = prefix + dataset_name + '/'
     locations_path = prefix + 'locations.txt'
     locations_path = prefix + 'locations.txt'

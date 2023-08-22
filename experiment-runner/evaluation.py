@@ -54,6 +54,7 @@ def calculate_metrics(evaluation_deaths, predicted_deaths,
    
         #calculate mean and confidence interval (95%) based off joint rmse/mae vals
         confidence_level = max(0, min(confidence_level, 1)) 
+        
         joint_rmse_lower = np.percentile(rmse_over_samples, (1 - confidence_level) * 100 / 2)
         joint_rmse_upper = np.percentile(rmse_over_samples, 100 - (1 - confidence_level) * 100 / 2)
 

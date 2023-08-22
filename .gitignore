@@ -137,11 +137,11 @@ clean_semi_tract/
 CASTNet-master/
 
 #data, which is on cluster
-cook-county-data
+/cook-county/data
 
-/cook-county/cleaning-cook-county/cook_county_gdf_quarterly.csv
-/cook-county/cleaning-cook-county/cook_county_gdf_annual.csv
-/cook-county/cleaning-cook-county/cook_county_gdf_semiannual.csv
+#castnet results
+/CASTNet/hughes-CASTNet/Results
+
 # Other
 .DS_Store
 
