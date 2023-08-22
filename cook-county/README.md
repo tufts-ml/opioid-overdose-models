@@ -1,7 +1,7 @@
 @author - Jyontika Kapoor (jk103@wellesley.edu)
 Under advisement of Kyle Heuton and Michael C. Hughes
 
-PrjecT: pioid-Model Forecasting 
+project: opioid-Model Forecasting 
 
 This folder pre-processes data from the Medical Examiner's website for Cook County, IL. 
 Raw data can be found on hughes-lab cluster, and links are below as well:
