@@ -1,59 +1,71 @@
 
 import numpy as np
-import scipy.stats as stats
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+from math import sqrt
 
 
-def calculate_metrics(actual_values, predicted_deaths, first_test_timestep, last_test_timestep, num_uncertainty_samples, 
-                      confidence_level=0.95):
+
+def calculate_metrics(evaluation_deaths, predicted_deaths, 
+                      num_locations_removed = 250, confidence_level=0.95, seed=360):
         """
         @Return: joint RMSE and joint MAE alongside confidence interval
-        @param: num_uncertainty_samples: The number of samples for uncertainty estimation
-        num_uncertainty_samples should be SAME as bpr_uncertainty for that model
-
+        @param: evaluation_deaths pulled from multiindexed_gdf, not sampled yet
+        @param: predicted_deaths - corresponding model returns, already sampled
         """
+        rng = np.random.default_rng(seed=seed) 
+        num_years = len(evaluation_deaths)
+        num_uncertainty_samples = len(predicted_deaths) // num_years
 
-        num_years = last_test_timestep - first_test_timestep + 1
-        num_samples = num_uncertainty_samples
 
-        #initialize lists to store values for each year
-        joint_rmse_values = [] 
-        joint_mae_values = []
+        #make sure each element in evaluation_deaths is of same len, set num_locations to that len
+        lengths = [len(sub_list) for sub_list in evaluation_deaths]
+        if all(length == lengths[0] for length in lengths):
+             num_locations = lengths[0] #1328 for cook county, 1620 for MA
+        
+        num_sampled = num_locations - num_locations_removed 
 
-        #calculate metrics fir each year across diff. samples of predicted values and actual values
+        #initialize lists to store values 
+        mae_over_samples = [] 
+        rmse_over_samples = []
 
-        for year_idx in range(num_years):
-            year_actual_values = actual_values[year_idx]
-            year_predicted_deaths = predicted_deaths[year_idx]
+        #calculate metrics for each year across diff. samples of predicted values and actual values
+        for i in range(num_years): 
 
-            year_rmse_values = []
-            year_mae_values = []
+            sampled_indices = rng.choice(range(num_locations), size=num_sampled, replace=False)
+            current_eval_deaths = evaluation_deaths[i][sampled_indices]
+            current_predicted_deaths = predicted_deaths[i][sampled_indices]
 
-            for sample_idx in range(num_samples):
-                samples = year_predicted_deaths[sample_idx]
+            #for test time 1, go through first half of predicted_deaths
+            if i == 0: 
+                for _ in range(num_uncertainty_samples):
+                    mae_over_samples.append(mean_absolute_error(current_eval_deaths, current_predicted_deaths))
+                    rmse_over_samples.append(sqrt(mean_squared_error(current_eval_deaths, current_predicted_deaths)))
 
-                rmse = np.sqrt(np.mean((samples - year_actual_values)**2))
-                year_rmse_values.append(rmse)
-
-                mae_samples = np.mean(np.abs(samples - year_actual_values))
-                year_mae_values.append(mae_samples)
-
-            #aggregate  values to form the joint RMSE and joint MAE metrics
-            joint_rmse_values.extend(year_rmse_values)
-            joint_mae_values.extend(year_mae_values)
+            #for test time 2, go through second half of predicted_deaths
+            else:
+                upper_bound = len(evaluation_deaths)*num_uncertainty_samples 
+                for _ in range(num_uncertainty_samples, upper_bound):
+                    mae_over_samples.append(mean_absolute_error(current_eval_deaths, current_predicted_deaths))
+                    rmse_over_samples.append(sqrt(mean_squared_error(current_eval_deaths, current_predicted_deaths)))
 
         #calculate mean and confidence interval (95%) based off joint rmse/mae vals
-        joint_rmse_mean = np.mean(joint_rmse_values)
-        joint_rmse_conf_interval = stats.t.interval(confidence_level, len(joint_rmse_values) - 1, loc=joint_rmse_mean,
-                                                    scale=stats.sem(joint_rmse_values))
+        joint_rmse_mean = np.mean(rmse_over_samples)
+        joint_mae_mean = np.mean(mae_over_samples)
+   
+        #calculate mean and confidence interval (95%) based off joint rmse/mae vals
+        confidence_level = max(0, min(confidence_level, 1)) 
+        joint_rmse_lower = np.percentile(rmse_over_samples, (1 - confidence_level) * 100 / 2)
+        joint_rmse_upper = np.percentile(rmse_over_samples, 100 - (1 - confidence_level) * 100 / 2)
 
-        joint_mae_mean = np.mean(joint_mae_values)
-        joint_mae_conf_interval = stats.t.interval(confidence_level, len(joint_mae_values) - 1, loc=joint_mae_mean,
-                                                scale=stats.sem(joint_mae_values))
+        joint_mae_lower = np.percentile(mae_over_samples, (1 - confidence_level) * 100 / 2)
+        joint_mae_upper = np.percentile(mae_over_samples, 100 - (1 - confidence_level) * 100 / 2)
 
-        return (joint_rmse_mean, joint_rmse_conf_interval), (joint_mae_mean, joint_mae_conf_interval)
+        return (joint_rmse_mean, (joint_rmse_lower, joint_rmse_upper)), \
+            (joint_mae_mean, (joint_mae_lower, joint_mae_upper))
 
 
-###HElPER function to print results
+
+###HELPER function to print results
 def print_results(metric_name, mean_value, confidence_interval, confidence_level=0.95):
     '''Prints results from calculate_metrics'''
     print(f"{metric_name} (Mean, {confidence_level*100:.0f}% CI): {mean_value:.2f}, "
