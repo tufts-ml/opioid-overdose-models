@@ -5,7 +5,7 @@ import itertools
 import make_xy_data_splits
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from pipelines import LastWYears_Average, PoissonRegr, LinearRegr
+from pipelines import LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr
 
 
 def calc_score(model, x_df, y_df, metric):
@@ -31,6 +31,7 @@ def calc_score_dict(model, x_df, y_df, split_name, metrics=['mae', 'rmse']):
 
 if __name__ == '__main__':
     context_size_in_tsteps = 3
+    verbose = False
 
     tr, va, te = make_xy_data_splits.load_xy_splits(
         timescale='year',
@@ -43,7 +44,7 @@ if __name__ == '__main__':
         add_time=True,
         add_svi=True)
     
-    for model_module in [LastWYears_Average, PoissonRegr, LinearRegr]:
+    for model_module in [LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr]:
 
         hyper_grid = model_module.make_hyper_grid(
             Wmax=context_size_in_tsteps)
@@ -71,7 +72,8 @@ if __name__ == '__main__':
             row_dict_list.append(row_dict)
 
         hyper_df = pd.DataFrame(row_dict_list)
-        print(hyper_df)
+        if verbose:
+            print(hyper_df)
         for k, v in best_model.get_params().items():
             assert k in best_hypers
             assert best_hypers[k] == v
@@ -79,5 +81,5 @@ if __name__ == '__main__':
         va_score_dict = calc_score_dict(best_model, va.x, va.y, 'valid')
         te_score_dict = calc_score_dict(best_model, te.x, te.y, 'test')
         df = pd.DataFrame([va_score_dict, te_score_dict])\
-            [['method', 'hypers', 'split', 'mae', 'rmse']].copy()
+            [['method', 'mae', 'rmse', 'hypers', 'split']].copy()
         print(df)
