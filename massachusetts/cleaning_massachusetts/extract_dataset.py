@@ -5,7 +5,7 @@ import time
 
 import numpy as np
 import pandas as pd
-import censusgeocode as cg
+from censusgeocode import CensusGeocode
 import geopandas as gpd
 
 
@@ -85,7 +85,7 @@ def unify_all_inputs(data_dir, relevant_files, relevant_years):
             state = 'MA'
 
         if has_ffix and 'RES_STREET_PREFIX' not in single_year_df.columns:
-            print(f'No decdent address column in {year}')
+            print(f'No decedent address column in {year}')
             #continue
             
         if year==2014:
@@ -112,7 +112,7 @@ def unify_all_inputs(data_dir, relevant_files, relevant_years):
         except KeyError:
             count_filtered += 0
 
-        print(f'In {year} {count_filtered} rows have missing decdent address, '
+        print(f'In {year} {count_filtered} rows have missing decedent address, '
             f'{count_filtered/tot_rows*100:.1f}% of total')
 
         # If street number is hyphenated, take first (123-125 -> 123)
@@ -137,7 +137,7 @@ def unify_all_inputs(data_dir, relevant_files, relevant_years):
             filtered_df['SFN_NUM'] = f'{year}_' + filtered_df.index.astype(str)
             
         count_other_states = filtered_df[filtered_df['RES_STATE']!=state].shape[0]
-        print(f'Ignoring {count_other_states} decdencts not from  {state}')
+        print(f'Ignoring {count_other_states} decedents not from  {state}')
         filtered_df = filtered_df[filtered_df['RES_STATE']==state]
 
         address_df = pd.concat([address_df, filtered_df[['SFN_NUM', 'address','RES_CITY', 'RES_STATE', 'RES_ZIP']]])
@@ -153,6 +153,8 @@ def geocode_addresses(address_df, output_dir):
     address_df.iloc[7000:14000,:].to_csv(address_file2, index=False)
     address_file3 = os.path.join(output_dir,'decedent_addresses_3.csv')
     address_df.iloc[14000:,:].to_csv(address_file3, index=False)
+
+    cg = CensusGeocode(benchmark='Public_AR_Current', vintage='ACS2021_Current')
 
     start = time.time()
 
