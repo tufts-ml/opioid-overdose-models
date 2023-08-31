@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from pandas import IndexSlice as idx
+import geopandas as gpd
 import os
 
 from collections import namedtuple
@@ -36,7 +37,7 @@ def load_xy_splits(
         add_svi=True,
         **kwargs
         ):
-    all_df = pd.read_csv(os.path.join(
+    all_df = gpd.read_file(os.path.join(
         data_dir, csv_pattern_str.format(timescale=timescale)))
 
     x_cols_only = []
@@ -47,9 +48,10 @@ def load_xy_splits(
     if add_svi:
         x_cols_only += svi_cols
     y_cols_only = ['deaths']
-    info_cols_only = [year_col, 'year_frac']
+    info_cols_only = [year_col]
 
     # Create the multiindex, reinserting timestep as a col not just index
+    all_df.loc[:, geography_col] = all_df[geography_col].astype(int)
     mi_df = all_df.set_index([geography_col, timestep_col])
     mi_df[timestep_col] = mi_df.index.get_level_values(timestep_col)
 

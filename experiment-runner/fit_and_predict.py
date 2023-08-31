@@ -1,3 +1,4 @@
+import argparse
 import numpy as np
 import pandas as pd
 import os
@@ -30,16 +31,50 @@ def calc_score_dict(model, x_df, y_df, split_name, metrics=['mae', 'rmse']):
             split=split_name)
 
 if __name__ == '__main__':
-    context_size_in_tsteps = 3
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--location', choices=['MA', 'cook'], help='Which location to run')
+    args = parser.parse_args()
+
     verbose = False
 
+    if args.location == 'MA':
+        timescale = 'annual'
+        csv_pattern_str = 'clean_{timescale}_tract'
+        context_size_in_tsteps = 5
+        train_years=[2014, 2015, 2016, 2017, 2018]
+        valid_years=[2019]
+        test_years=[2020, 2021]
+        svi_cols = ['theme_1_pc', 'theme_2_pc', 'theme_3_pc',
+                     'theme_4_pc', 'svi_pctile']
+        space_cols =  ['lat', 'lon']
+
+    elif args.location =='cook':
+        timescale ='year'
+        csv_pattern_str = 'cook_county_gdf_cleanwithsvi_{timescale}.csv'
+        context_size_in_tsteps = 3
+        train_years=[2017, 2018, 2019]
+        valid_years=[2020]
+        test_years=[2021, 2022]
+        svi_cols = [
+            'svi_theme1_pctile', 'svi_theme2_pctile', 'svi_theme3_pctile',
+            'svi_theme4_pctile', 'svi_total_pctile']
+
+        space_cols = [
+            'INTPTLAT', 'INTPTLON']
+
+    context_size_in_tsteps = 3
+
     tr, va, te = make_xy_data_splits.load_xy_splits(
-        timescale='year',
-        train_years=[2017, 2018, 2019],
-        valid_years=[2020],
-        test_years=[2021, 2022],
+        timescale=timescale,
+        csv_pattern_str=csv_pattern_str,
+        train_years=train_years,
+        valid_years=valid_years,
+        test_years=test_years,
         context_size_in_tsteps=context_size_in_tsteps,
         how_to_handle_tstep_without_enough_context='pad_with_zero',
+        svi_cols=svi_cols,
+        space_cols=space_cols,
         add_space=True,
         add_time=True,
         add_svi=True)
