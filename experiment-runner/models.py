@@ -5,8 +5,17 @@ from pandas import IndexSlice as idx
 from metrics import fast_bpr
 import pickle
 import os 
+import sys
 
-#####
+# import CASTNet files
+current_directory = os.path.dirname(os.path.abspath(__file__))
+path_to_CASTNet = os.path.abspath(os.path.join(current_directory, '..', 'CASTNet/hughes-CASTNet/'))
+sys.path.append(path_to_CASTNet)
+import CASTNetWrapper
+import hughes_castnet_main
+
+##########
+
 def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations, timestep_col='timestep',
                      location_col='geoid', outcome_col='deaths',
                      removed_locations=250, bpr_uncertainty_samples=50, seed=360):
@@ -235,84 +244,45 @@ def scikit_model_with_coefficients(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, mo
     return pd.DataFrame(result_data)
 
 
-###################
-
-def castnet_model(multiindexed_gdf, Cook, first_pred_time, last_pred_time, num_locations,
-                    timestep_col='timestep', 
-                    location_col='geoid', outcome_col='deaths', removed_locations=250, 
-                    bpr_uncertainty_samples=50, seed=360, locations=None):
+def castnet_model(multiindexed_gdf, dataset_name, first_pred_time, last_pred_time, removed_locations=250,
+                  timestep_col='timestep', location_col='geoid', outcome_col='deaths', 
+                  bpr_uncertainty_samples=50, seed=360):
     """
     Calculate BPR for CASTNet predictions.
-    @Cook is true if calculating cook county, False if calculating MA
+    @dataset_name, is either 'cook-county' or 'MA'
     @return: List of BPR results over time and samples
     """
+    conf = hughes_castnet_main.Config()
 
-    #import results for either MA or cook county
-    if Cook:
-        data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-        results_path = os.path.join(data_dir, 'Results/cook-county-predictions.csv') 
-        locations_path = os.path.join(data_dir, 'Data/Chicago/locations.txt')
-    else:
-        data_dir = '/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/'
-        results_path = os.path.join(data_dir, 'Results/MA-predictions.csv') 
-        locations_path = os.path.join(data_dir, 'Data/MA/locations.txt')
+    # create a CASTNetWrapper instance
+    castnet_wrapper = CASTNetWrapper.CASTNetWrapper(conf)
 
-    CN_results = pd.read_csv(results_path)
-    CN_results['geoid'] = CN_results['geoid'].astype(str)
+    # Load CASTNet results and locations using wrapper
+    CN_results, CN_locations = castnet_wrapper.load_results_and_locations(dataset_name)
 
-    CN_locations = []
-    with open(locations_path, 'rb') as file:
-        for line in file:
-            line = line.rstrip().decode("utf-8").split("\t")
-            CN_locations.append(line[1])
-
-    #now we can sample and calculate bpr
+    # sample and calculate BPR
     rng = np.random.default_rng(seed=seed)
+    num_locations = len(CN_locations)
     num_sampled = num_locations - removed_locations
-    output_deaths=[]
     results_over_time = []
 
-    for timestep in range(first_pred_time, last_pred_time+1):
+    for timestep in range(first_pred_time, last_pred_time + 1):
+        # extract evaluation deaths 
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
-
-        if Cook:
-            current_year = 2014 + timestep
-        else:
-             current_year = 2000 + timestep
-             
+        
+        current_year = 2014 + timestep if dataset_name=='cook-county' else 2000 + timestep 
         predicted_deaths_df = CN_results[(CN_results['year'] == current_year) & (CN_results['geoid'].isin(CN_locations))]
-        predicted_deaths = predicted_deaths_df['prediction'].values
-        output_deaths.append(predicted_deaths)
-    
-
-        if CN_locations is not None:
-            # Match the order of locations with the order of data
-            evaluation_deaths = evaluation_deaths.loc[CN_locations]
+        #predicted_deaths = predicted_deaths_df['prediction'].values
 
         results_over_samples = []
-
         for _ in range(bpr_uncertainty_samples):
             sampled_indices = rng.choice(range(num_locations), size=num_sampled, replace=False)
-
-            # Convert evaluation_deaths into a pandas Series
-            evaluation_deaths_series = pd.Series(evaluation_deaths.iloc[sampled_indices].values, index=sampled_indices)
-
-            # Use predicted_deaths_df for the specific year
-            predicted_deaths_sampled = pd.Series(predicted_deaths_df.iloc[sampled_indices]['prediction'].values, 
-                                                 index=sampled_indices)
+            evaluation_deaths_series = evaluation_deaths.iloc[sampled_indices]
+            predicted_deaths_sampled = predicted_deaths_df.iloc[sampled_indices]['prediction'].values
             results_over_samples.append(fast_bpr(evaluation_deaths_series, predicted_deaths_sampled))
-
-
+        
         results_over_time.append(results_over_samples)
 
-    output_deaths = np.array(output_deaths)
+    output_deaths = np.array(results_over_time)
     return results_over_time, output_deaths
-
-
-
-
-
-
-
-
