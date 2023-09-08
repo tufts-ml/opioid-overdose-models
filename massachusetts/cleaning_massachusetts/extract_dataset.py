@@ -240,18 +240,22 @@ def add_svi_to_data(svi_df, deaths_gdf):
             theme_cols = ['MAG1TP','MAG2TP','MAG3TP','MAG4TP','MATP']
             tract_col = 'TRACT'
             geo_col = 'FIPS'
+            pop_col = 'Totpop2000'
         elif year <= 2012:
             svi_year = 2010
             theme_cols = ['R_PL_THEME1','R_PL_THEME2','R_PL_THEME3','R_PL_THEME4','R_PL_THEMES']
             tract_col = 'TRACT'
+            pop_col = 'E_TOTPOP'
         elif year <=2014:
             svi_year = 2014
             theme_cols = ['RPL_THEME1','RPL_THEME2','RPL_THEME3','RPL_THEME4','RPL_THEMES']
             tract_col = 'TRACTCE'
         elif year <= 2018:
             svi_year = 2016
-        else:
+        elif year <= 2019:
             svi_year = 2018
+        else:
+            svi_year = 2020
         
             
         svi_file = os.path.join(svi_dir, f'Massachusetts_SVI_{svi_year}.csv')
