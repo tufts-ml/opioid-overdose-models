@@ -264,8 +264,8 @@ def add_svi_to_data(svi_df, deaths_gdf):
         svi_df.loc[:,geo_col] = svi_df[geo_col].astype(str)
         svi_df.loc[:,'ROUNDED_TRACT'] = svi_df[tract_col].astype(str).apply(lambda x: x[:-2] +'00' )
         
-        target_cols = ['theme_1_pctile', 'theme_2_pctile', 'theme_3_pctile', 'theme_4_pctile', 'svi_pctile']
-        svi_df = svi_df.rename(columns={theme:target for theme, target in zip(theme_cols, target_cols)})
+        target_cols = ['theme_1_pctile', 'theme_2_pctile', 'theme_3_pctile', 'theme_4_pctile', 'svi_pctile', 'pop']
+        svi_df = svi_df.rename(columns={theme:target for theme, target in zip(theme_cols+[pop_col], target_cols)})
 
         svi_df_rounded = svi_df[target_cols+['ROUNDED_TRACT']].groupby('ROUNDED_TRACT').mean().reset_index()
         
