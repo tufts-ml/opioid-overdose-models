@@ -163,3 +163,8 @@ for (year in 2013:end_year){
     results[results$year == year,] <- this_years_results
 }
 
+# drop geometry colu
+results$geometry <- NULL
+
+write.csv(results, file = "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline/results.csv")
+

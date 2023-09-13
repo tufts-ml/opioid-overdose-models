@@ -7,4 +7,4 @@
 #SBATCH -e /cluster/tufts/hugheslab/kheuto01/slurmlog/err/log_%j.err       # Write stderr to file named log_JOBIDNUM.err in log dir
 
 
-python /cluster/home/kheuto01/code/opioid-overdose-models/massachusetts/cleaning_massachusetts/extract_dataset.py --output_dir "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline" --do_final_quarterly
+python /cluster/home/kheuto01/code/opioid-overdose-models/massachusetts/cleaning_massachusetts/extract_dataset.py --output_dir "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline" --add_svi --do_final_quarterly
