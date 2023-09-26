@@ -6,7 +6,7 @@ import itertools
 import make_xy_data_splits
 
 from sklearn.metrics import mean_absolute_error, mean_squared_error
-from pipelines import LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr
+from pipelines import LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr, GPRegr
 
 
 def calc_score(model, x_df, y_df, metric):
@@ -79,7 +79,7 @@ if __name__ == '__main__':
         add_time=True,
         add_svi=True)
     
-    for model_module in [LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr]:
+    for model_module in [GPRegr]:
 
         hyper_grid = model_module.make_hyper_grid(
             Wmax=context_size_in_tsteps)
