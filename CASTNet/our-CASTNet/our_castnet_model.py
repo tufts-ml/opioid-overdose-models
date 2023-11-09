@@ -5,7 +5,7 @@ np.random.seed(401)
 import tensorflow as tf
 tf.random.set_seed(401)
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, auc, roc_curve, roc_auc_score, f1_score
-import hughes_data 
+import our_data 
 import argparse
 import sys
 import pickle

@@ -7,9 +7,9 @@ library(sf)
 library(rgdal)
 library(spdep)
  
-data_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/cook_county_gdf_cleanwithsvi_year"
+data_path <- "cook_county_gdf_cleanwithsvi_year"
 end_year <- 2022
-shape_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/shapefiles/tl_2021_17_tract"
+shape_path <- "tl_2021_17_tract"
 
 data <- read_sf(data_path)
 shape_data <- read_sf(shape_path)
@@ -169,5 +169,5 @@ for (year in 2018:end_year){
 # drop geometry colu
 results$geometry <- NULL
 
-write.csv(results, file = "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/negative_binom_results.csv")
+write.csv(results, file = "./negative_binom_results.csv")
 

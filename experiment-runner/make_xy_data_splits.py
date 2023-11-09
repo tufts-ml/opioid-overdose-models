@@ -19,7 +19,7 @@ def make_outcome_history_feat_names(W, outcome_col='deaths'):
     return ['prev_%s_%02dback' % (outcome_col, W - ww) for ww in range(W)]
 
 def load_xy_splits(
-        data_dir = os.environ.get('DATA_DIR', '/Users/jyontika/Desktop/cook-county/data/'),
+        data_dir = os.environ.get('DATA_DIR'),
         timescale='year',
         csv_pattern_str='cook_county_gdf_cleanwithsvi_{timescale}.csv',
         timestep_col='timestep',

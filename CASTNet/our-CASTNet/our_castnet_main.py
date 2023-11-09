@@ -5,8 +5,8 @@ np.random.seed(401)
 import tensorflow as tf
 tf.random.set_seed(401)
 from sklearn.metrics import confusion_matrix, precision_score, recall_score, auc, roc_curve, roc_auc_score, f1_score
-import hughes_data
-import hughes_castnet_model
+import our_data
+import our_castnet_model
 import argparse
 import sys
 import pickle
@@ -76,7 +76,7 @@ def run(castnet_datadir, cook_county=True):
         valid_svi_local, valid_svi_global, valid_static,
           valid_sample_indices, valid_dist, valid_y,
             test_svi_local, test_svi_global, test_static,
-              test_sample_indices, test_dist, test_y) = hughes_data.readData(castnet_datadir, conf.dataset_name, conf.window_size, conf.lead_time,
+              test_sample_indices, test_dist, test_y) = our_data.readData(castnet_datadir, conf.dataset_name, conf.window_size, conf.lead_time,
                                                                               conf.num_train_years, conf.num_test_years, conf.num_valid_years,
                                                                                 conf.dist, conf.time_unit)
 
@@ -102,11 +102,11 @@ def run(castnet_datadir, cook_county=True):
 
     sess = tf.compat.v1.Session()
 
-    castnet = hughes_castnet_model.CASTNet(sess=sess, conf=conf)
+    castnet = our_castnet_model.CASTNet(sess=sess, conf=conf)
     print(train_svi_local.shape[0])
     castnet.train(train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
 
-    data_dir = os.environ.get('DATA_DIR', "/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/")
+    data_dir = os.environ.get('DATA_DIR', "./")
     model_save_path = os.path.join(data_dir, 'Results')
     
     if cook_county:

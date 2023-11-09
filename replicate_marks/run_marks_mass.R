@@ -7,9 +7,9 @@ library(sf)
 library(rgdal)
 library(spdep)
  
-data_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline/clean_annual_tract"
+data_path <- "clean_annual_tract"
 end_year <- 2021
-shape_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/shapefiles/MA_2021"
+shape_path <- "MA_2021"
 
 data <- read_sf(data_path) 
 mass_data <- read_sf(shape_path)
@@ -166,5 +166,5 @@ for (year in 2013:end_year){
 # drop geometry colu
 results$geometry <- NULL
 
-write.csv(results, file = "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline/results.csv")
+write.csv(results, file = "./results.csv")
 
