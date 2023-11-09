@@ -7,11 +7,11 @@ library(sf)
 library(rgdal)
 library(spdep)
  
-data_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/cook_county_gdf_clean_year.csv"
+data_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/cook_county_gdf_cleanwithsvi_year"
 end_year <- 2022
 shape_path <- "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/shapefiles/tl_2021_17_tract"
 
-data <- read_sf(data_path, header=T)
+data <- read_sf(data_path)
 shape_data <- read_sf(shape_path)
 
 # make weights
@@ -21,6 +21,9 @@ rswm_q = nb2listw(wm_q, style = "W", zero.policy = TRUE)
 
 # get data unique years
 years <- unique(data$year)
+
+# make sure deaths are numeric
+data$deaths <- as.numeric(data$deaths)
 
 data$death_sp_lag <- NA
 data$next_year_overdose_deaths <- NA
@@ -55,23 +58,23 @@ data$carrying_capacity <- NA
 
 for(geoid in unique(data$geoid)){
 
-     ## Carrying Capacity is initially set to 5% of the county population in 2010
-    baseline <- data$pop[data$geoid == geoid & data$year == 2010]*0.05 
+     ## Carrying Capacity is initially set to 5% of the county population in 2015
+    baseline <- data$pop[data$geoid == geoid & data$year == 2015]*0.05 
     
-    for (year in 2010:end_year) {
+    for (year in 2015:end_year) {
         ## next we substract the number of overdose deaths from the prior three years
-        ## noting that for 2011 we only subtract the prior year
-        ## and that for 2012 only the prior two years
+        ## noting that for 2016 we only subtract the prior year
+        ## and that for 2017 only the prior two years
 
-        if(year == 2010){ 
+        if(year == 2015){ 
             data$carrying_capacity[data$geoid == geoid &
                                    data$year == year] <- baseline
         }
-        else if(year == 2011){
+        else if(year == 2016){
             data$carrying_capacity[data$geoid == geoid & data$year == year] <- baseline -
                 data$deaths[data$geoid == geoid & data$year == year - 1]
         }
-        else if(year == 2012){  
+        else if(year == 2017){  
             data$carrying_capacity[data$geoid == geoid & data$year == year] <- baseline -
                 data$deaths[data$geoid == geoid & data$year == year - 1] -
                 data$deaths[data$geoid == geoid & data$year == year - 2]
@@ -94,20 +97,20 @@ data$carrying_capacity[which(data$carrying_capacity < 50)] <- 50
 ##
 func <- next_year_overdose_deaths ~ (year|geoid) + ## random effect for county (FIPS) with a random slope for year
  offset(log(carrying_capacity)) + ## offset term for the log of the carrying capacity
-theme_1_pc + theme_2_pc + theme_3_pc + theme_4_pc +svi_pctile
+svi_theme1 + svi_theme2 + svi_theme3 + svi_theme4 + svi_total_
 
 ## First we create the results table where analysis for this half of the country will be stored
 
-results <- data[data$year >= 2013, c("geoid","year")] 
+results <- data[data$year >= 2018, c("geoid","year")] 
 ## First, we create the columns for the observed and predicted SynthOD deaths rates in 2013 (i.e. 201X)
 results$observed <- NA
 results$predicted <- NA
-for (year in 2013:end_year){
+for (year in 2018:end_year){
     ##
     ## We begin by predicting overdose death rates for the year 2013 (i.e. 201X)
     ## We provide detailed code for this year and note that the analysis for remaining years is identical
     ## As noted in the manuscript, in order to predict overdose deaths from the year 201X
-    ## We take predictor data from the years 2010 - 201(X-2) (paired with outcome data from 2011 - 201(X-1))
+    ## We take predictor data from the years 2015 - 201(X-2) (paired with outcome data from 2016 - 201(X-1))
     ## We train the model on this dataset
     ## Then we take predictors for the year 201(X-1) and feed them into the model to generate predictions for 201X15
     ## These values are the total predicted number of overdose deaths so then we population adjust
@@ -115,11 +118,11 @@ for (year in 2013:end_year){
     ## our final predicted overdose death rates for each county
     ##
     ## First we need the data to train our model
-    ## We select all data corresponding to years 2010 through 2011 (i.e. 2010 - 201(X-2))
-    train_data <- data[data$year >= 2010 & data$year < year-1 ,] 
+    ## We select all data corresponding to years 2015 through 2016 (i.e. 2015 - 201(X-2))
+    train_data <- data[data$year >= 2015 & data$year < year-1 ,] 
 
     ## Next we need our test/prediction data
-    ## We select the data corresponding to year 2012 (i.e. 201(X-1))
+    ## We select the data corresponding to year 2017 (i.e. 201(X-1))
     test_data <- data[data$year == year-1,] 
 
     ## Next we train the model on our data using the function specified
@@ -166,5 +169,5 @@ for (year in 2013:end_year){
 # drop geometry colu
 results$geometry <- NULL
 
-write.csv(results, file = "/cluster/tufts/hugheslab/datasets/NSF_OD/results_202308_pipeline/results.csv")
+write.csv(results, file = "/cluster/tufts/hugheslab/datasets/NSF_OD/cook-county-data/negative_binom_results.csv")
 

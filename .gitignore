@@ -154,3 +154,17 @@ CASTNet-master/
 notebooks/
 zinf_gp/
 
+decedent_addresses_1.csv
+decedent_addresses_2.csv
+decedent_addresses_3.csv
+geocoded_deaths_2000_2021.csv
+res_response_2000_2020.csv
+res_response_pt0.csv
+res_response_pt1.csv
+res_response_pt2.csv
+res_deaths_month_all/res_deaths_month_all.cpg
+res_deaths_month_all/res_deaths_month_all.dbf
+res_deaths_month_all/res_deaths_month_all.prj
+res_deaths_month_all/res_deaths_month_all.shp
+res_deaths_month_all/res_deaths_month_all.shx
+blah*

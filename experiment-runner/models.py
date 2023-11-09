@@ -18,12 +18,13 @@ import hughes_castnet_main
 
 def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations, timestep_col='timestep',
                      location_col='geoid', outcome_col='deaths',
-                     removed_locations=250, bpr_uncertainty_samples=50, seed=360):
+                     removed_locations=250, bpr_uncertainty_samples=50, seed=360, bpr_K=100):
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     results_over_time = []
     predicted_deaths=[]
+    denominator_deaths = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -33,12 +34,13 @@ def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_loca
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
+            denominator_deaths.append(evaluation_deaths[sampled_indicies].sort_values().iloc[-100:].sum())
+            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0, K=bpr_K))
             #predicted_deaths.append(evaluation_deaths[sampled_indicies]*0)
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, predicted_deaths
+    return results_over_time, predicted_deaths, denominator_deaths
 
 
 def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,

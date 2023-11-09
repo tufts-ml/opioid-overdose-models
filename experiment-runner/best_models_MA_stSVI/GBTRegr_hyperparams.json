@@ -1,0 +1,1 @@
+{"loss": "squared_error", "max_iter": 128, "min_samples_leaf": 128, "feat_cols": ["prev_deaths_05back", "prev_deaths_04back", "prev_deaths_03back", "prev_deaths_02back", "prev_deaths_01back", "lat", "lon", "timestep", "theme_1_pc", "theme_2_pc", "theme_3_pc", "theme_4_pc", "svi_pctile"], "max_leaf_nodes": 32}
