@@ -1,0 +1,1 @@
+{"feat_cols": ["prev_deaths_10back", "prev_deaths_09back", "prev_deaths_08back", "prev_deaths_07back", "prev_deaths_06back", "prev_deaths_05back", "prev_deaths_04back", "prev_deaths_03back", "prev_deaths_02back", "prev_deaths_01back", "lat", "lon", "timestep"], "alpha": 1.0, "max_iter": 1000}

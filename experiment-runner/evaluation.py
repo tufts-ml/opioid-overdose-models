@@ -6,7 +6,8 @@ from math import sqrt
 
 
 def calculate_metrics(evaluation_deaths, predicted_deaths, 
-                      num_locations_removed = 250, confidence_level=0.95, seed=360):
+                      num_locations_removed = 250, confidence_level=0.95, seed=360,
+                      num_uncertainty_samples=50):
         """
         @Return: joint RMSE and joint MAE alongside confidence interval
         @param: evaluation_deaths pulled from multiindexed_gdf, not sampled yet
@@ -14,7 +15,6 @@ def calculate_metrics(evaluation_deaths, predicted_deaths,
         """
         rng = np.random.default_rng(seed=seed) 
         num_years = len(evaluation_deaths)
-        num_uncertainty_samples = len(predicted_deaths) // num_years
 
 
         #make sure each element in evaluation_deaths is of same len, set num_locations to that len
@@ -27,26 +27,16 @@ def calculate_metrics(evaluation_deaths, predicted_deaths,
         #initialize lists to store values 
         mae_over_samples = [] 
         rmse_over_samples = []
-
         #calculate metrics for each year across diff. samples of predicted values and actual values
         for i in range(num_years): 
+            for _ in range(num_uncertainty_samples):
 
-            sampled_indices = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            current_eval_deaths = evaluation_deaths[i][sampled_indices]
-            current_predicted_deaths = predicted_deaths[i][sampled_indices]
+                sampled_indices = rng.choice(range(num_locations), size=num_sampled, replace=False)
+                current_eval_deaths = evaluation_deaths[i][sampled_indices]
+                current_predicted_deaths = predicted_deaths[i][sampled_indices]
 
-            #for test time 1, go through first half of predicted_deaths
-            if i == 0: 
-                for _ in range(num_uncertainty_samples):
-                    mae_over_samples.append(mean_absolute_error(current_eval_deaths, current_predicted_deaths))
-                    rmse_over_samples.append(sqrt(mean_squared_error(current_eval_deaths, current_predicted_deaths)))
-
-            #for test time 2, go through second half of predicted_deaths
-            else:
-                upper_bound = len(evaluation_deaths)*num_uncertainty_samples 
-                for _ in range(num_uncertainty_samples, upper_bound):
-                    mae_over_samples.append(mean_absolute_error(current_eval_deaths, current_predicted_deaths))
-                    rmse_over_samples.append(sqrt(mean_squared_error(current_eval_deaths, current_predicted_deaths)))
+                mae_over_samples.append(mean_absolute_error(current_eval_deaths, current_predicted_deaths))
+                rmse_over_samples.append(sqrt(mean_squared_error(current_eval_deaths, current_predicted_deaths)))
 
         #calculate mean and confidence interval (95%) based off joint rmse/mae vals
         joint_rmse_mean = np.mean(rmse_over_samples)

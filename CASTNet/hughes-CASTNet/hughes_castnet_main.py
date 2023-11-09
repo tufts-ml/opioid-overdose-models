@@ -15,10 +15,11 @@ import helper
 class Config:
     hidden_layer_size = 32
     no_epochs = 300
-    train_ratio = 0.75
-    test_ratio = 0.15
-    window_size = 8
-    lead_time = 2
+    num_train_years = 13
+    num_test_years = 1
+    num_valid_years = 1
+    window_size = None
+    lead_time = None
     time_unit = 1
     group_lasso = False
     dist = None
@@ -27,7 +28,7 @@ class Config:
     temporal_feature_size = None
     static_feature_size = None
     no_locations = None
-    batch_size = 50
+    batch_size = 1000
     learning_rate = 0.005
     embedding_size = 32
     test_time = False
@@ -35,7 +36,7 @@ class Config:
     num_spatial_heads = None
     orthogonal_loss_coef = None
 
-def run(cook_county=True):
+def run(castnet_datadir, cook_county=True):
     conf = Config()
 
     parser = argparse.ArgumentParser(description='Non-Event or Event')
@@ -70,7 +71,14 @@ def run(cook_county=True):
     conf.group_lasso = helper.str2bool(args.group_lasso)
     conf.test_time = helper.str2bool(args.test_time)
 
-    train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y = hughes_data.readData(conf.dataset_name, conf.window_size, conf.lead_time, conf.train_ratio, conf.test_ratio, conf.dist, conf.time_unit)
+    (train_svi_local, train_svi_global, train_static,
+      train_sample_indices, train_dist, train_y,
+        valid_svi_local, valid_svi_global, valid_static,
+          valid_sample_indices, valid_dist, valid_y,
+            test_svi_local, test_svi_global, test_static,
+              test_sample_indices, test_dist, test_y) = hughes_data.readData(castnet_datadir, conf.dataset_name, conf.window_size, conf.lead_time,
+                                                                              conf.num_train_years, conf.num_test_years, conf.num_valid_years,
+                                                                                conf.dist, conf.time_unit)
 
     if(conf.test_time == True):
         train_svi_global = np.concatenate([train_svi_global, valid_svi_global], axis=0)
@@ -95,6 +103,7 @@ def run(cook_county=True):
     sess = tf.compat.v1.Session()
 
     castnet = hughes_castnet_model.CASTNet(sess=sess, conf=conf)
+    print(train_svi_local.shape[0])
     castnet.train(train_svi_local, train_svi_global, train_static, train_sample_indices, train_dist, train_y, valid_svi_local, valid_svi_global, valid_static, valid_sample_indices, valid_dist, valid_y, test_svi_local, test_svi_global, test_static, test_sample_indices, test_dist, test_y)
 
     data_dir = os.environ.get('DATA_DIR', "/Users/jyontika/Desktop/opioid-overdose-models/CASTNet/hughes-CASTNet/")

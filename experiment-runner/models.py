@@ -18,12 +18,13 @@ import hughes_castnet_main
 
 def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations, timestep_col='timestep',
                      location_col='geoid', outcome_col='deaths',
-                     removed_locations=250, bpr_uncertainty_samples=50, seed=360):
+                     removed_locations=250, bpr_uncertainty_samples=50, seed=360, bpr_K=100):
 
     rng = np.random.default_rng(seed=seed)
     num_sampled = num_locations - removed_locations
     results_over_time = []
     predicted_deaths=[]
+    denominator_deaths = []
 
     for timestep in range(first_pred_time, last_pred_time+1):
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
@@ -33,12 +34,13 @@ def all_zeroes_model(multiindexed_gdf, first_pred_time, last_pred_time, num_loca
 
         for _ in range(bpr_uncertainty_samples):
             sampled_indicies = rng.choice(range(num_locations), size=num_sampled, replace=False)
-            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0))
+            denominator_deaths.append(evaluation_deaths[sampled_indicies].sort_values().iloc[-100:].sum())
+            results_over_samples.append(fast_bpr(evaluation_deaths[sampled_indicies], evaluation_deaths[sampled_indicies]*0, K=bpr_K))
             #predicted_deaths.append(evaluation_deaths[sampled_indicies]*0)
 
         results_over_time.append(results_over_samples)
 
-    return results_over_time, predicted_deaths
+    return results_over_time, predicted_deaths, denominator_deaths
 
 
 def last_time_model(multiindexed_gdf, first_pred_time, last_pred_time, num_locations,
@@ -244,7 +246,7 @@ def scikit_model_with_coefficients(multiindexed_gdf, x_BSF, y_BS, test_x_BSF, mo
     return pd.DataFrame(result_data)
 
 
-def castnet_model(multiindexed_gdf, dataset_name, first_pred_time, last_pred_time, removed_locations=250,
+def castnet_model(multiindexed_gdf, dataset_name, cn_result_path, cn_location_path, first_pred_time, last_pred_time, removed_locations=250,
                   timestep_col='timestep', location_col='geoid', outcome_col='deaths', 
                   bpr_uncertainty_samples=50, seed=360):
     """
@@ -252,37 +254,39 @@ def castnet_model(multiindexed_gdf, dataset_name, first_pred_time, last_pred_tim
     @dataset_name, is either 'cook-county' or 'MA'
     @return: List of BPR results over time and samples
     """
-    conf = hughes_castnet_main.Config()
+    CN_results = pd.read_csv(cn_result_path)
+    CN_results['geoid'] = CN_results['geoid'].astype(str)
 
-    # create a CASTNetWrapper instance
-    castnet_wrapper = CASTNetWrapper.CASTNetWrapper(conf)
-
-    # Load CASTNet results and locations using wrapper
-    CN_results, CN_locations = castnet_wrapper.load_results_and_locations(dataset_name)
+    CN_locations = []
+    with open(cn_location_path, 'rb') as file:
+        for line in file:
+            line = line.rstrip().decode("utf-8").split("\t")
+            CN_locations.append(line[1])
 
     # sample and calculate BPR
     rng = np.random.default_rng(seed=seed)
     num_locations = len(CN_locations)
     num_sampled = num_locations - removed_locations
     results_over_time = []
+    output_deaths = []
 
     for timestep in range(first_pred_time, last_pred_time + 1):
         # extract evaluation deaths 
         evaluation_deaths = multiindexed_gdf.loc[idx[:, timestep], :]
         evaluation_deaths = evaluation_deaths.drop(columns=timestep_col).reset_index().set_index(location_col)[outcome_col]
-        
+
         current_year = 2014 + timestep if dataset_name=='cook-county' else 2000 + timestep 
-        predicted_deaths_df = CN_results[(CN_results['year'] == current_year) & (CN_results['geoid'].isin(CN_locations))]
-        #predicted_deaths = predicted_deaths_df['prediction'].values
+        predicted_deaths_df = CN_results[(CN_results['year'] == current_year)].set_index('geoid')
+        predicted_deaths = predicted_deaths_df['prediction'].values
+        output_deaths.append(predicted_deaths)
 
         results_over_samples = []
         for _ in range(bpr_uncertainty_samples):
             sampled_indices = rng.choice(range(num_locations), size=num_sampled, replace=False)
             evaluation_deaths_series = evaluation_deaths.iloc[sampled_indices]
-            predicted_deaths_sampled = predicted_deaths_df.iloc[sampled_indices]['prediction'].values
+            predicted_deaths_sampled = predicted_deaths_df.iloc[sampled_indices]['prediction']
             results_over_samples.append(fast_bpr(evaluation_deaths_series, predicted_deaths_sampled))
-        
+
         results_over_time.append(results_over_samples)
 
-    output_deaths = np.array(results_over_time)
     return results_over_time, output_deaths
