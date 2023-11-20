@@ -145,12 +145,20 @@ CASTNet-master/
 /cook-county/data
 
 #castnet results
-/CASTNet/hughes-CASTNet/Results
+/CASTNet/our-CASTNet/Results
+#castnet notebooks
+/CASTNet/our-CASTNet/*.ipynb
+
+#castnet ma data
+CASTNet/our-CASTNet/Data/MA/overdose.pkl
 
 # Other
 .DS_Store
 
-# Kyle's
+# notebooks
+experiment-runner/*.ipynb
+
+# personal's
 notebooks/
 zinf_gp/
 
