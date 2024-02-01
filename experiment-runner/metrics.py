@@ -1,6 +1,6 @@
 import numpy as np
 
-def fast_bpr(true_val, pred_val, K=100, bootstrap_samples=1000):
+def fast_bpr(true_val, pred_val, K=100, bootstrap_samples=1000, seed=36000):
     """
 
     :param true_val: Pandas dataframe indexed on location
@@ -22,7 +22,8 @@ def fast_bpr(true_val, pred_val, K=100, bootstrap_samples=1000):
     tied_top_true = true_val[true_val == top_K_true.min()]
 
     # now randomly choose locations from the tied spots
-    bootstrapped_tied_indices = np.random.choice(tied_top_predicted.index, (bootstrap_samples, num_tied_spots))
+    rng = np.random.default_rng(seed=seed)
+    bootstrapped_tied_indices = rng.choice(tied_top_predicted.index, (bootstrap_samples, num_tied_spots))
     undisputed_pred_idx = undisputed_top_predicted.index.values
     bootstrapped_all_indices = [np.concatenate((undisputed_pred_idx, bootstrap_index))
                                 for bootstrap_index in bootstrapped_tied_indices]
