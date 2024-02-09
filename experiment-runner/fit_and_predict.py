@@ -206,6 +206,7 @@ if __name__ == '__main__':
             'INTPTLAT', 'INTPTLON']
 
     tr, va, te = make_xy_data_splits.load_xy_splits(
+        data_dir = '../cook-county/cleaning-cook-county/data_dir',
         timescale=timescale,
         csv_pattern_str=csv_pattern_str,
         train_years=train_years,
