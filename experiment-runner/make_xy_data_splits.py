@@ -51,7 +51,7 @@ def load_xy_splits(
     info_cols_only = [year_col]
 
     # Create the multiindex, reinserting timestep as a col not just index
-    all_df = all_df.astype({geography_col: int, timestep_col: int})
+    all_df = all_df.astype({geography_col: np.int64, timestep_col: np.int64})
     mi_df = all_df.set_index([geography_col, timestep_col])
     mi_df[timestep_col] = mi_df.index.get_level_values(timestep_col)
 
