@@ -3,6 +3,7 @@ import pandas as pd
 from pandas import IndexSlice as idx
 import geopandas as gpd
 import os
+import sys
 
 from collections import namedtuple
 
@@ -35,10 +36,11 @@ def load_xy_splits(
         add_space=True,
         add_time=True,
         add_svi=True,
+        fine_exp=False,
         **kwargs
         ):
-    all_df = gpd.read_file(os.path.join(
-        data_dir, csv_pattern_str.format(timescale=timescale)))
+
+    all_df = gpd.read_file(os.path.join(data_dir, csv_pattern_str.format(timescale=timescale)))
 
     x_cols_only = []
     if add_space:
@@ -66,7 +68,7 @@ def load_xy_splits(
     assert np.max(va_years) < np.min(te_years)
     W = int(context_size_in_tsteps)
 
-    kws = dict(timestep_col=timestep_col,
+    kws = dict(fine_exp=fine_exp, timestep_col=timestep_col,
         year_col=year_col, outcome_col=outcome_col, 
         **kwargs)
     tr_tup = make_x_y_i_data_with_filled_context(
@@ -82,7 +84,7 @@ def load_xy_splits(
 def make_x_y_i_data_with_filled_context(
         x_df, y_df, info_df,
         first_year, last_year,
-        context_size_in_tsteps,
+        context_size_in_tsteps, fine_exp=False,
         lag_in_tsteps=1,
         how_to_handle_tstep_without_enough_context='raise_error',
         year_col='year', timestep_col='timestep', outcome_col='deaths'):
@@ -136,6 +138,7 @@ def make_x_y_i_data_with_filled_context(
         timesteps_in_year = t_index.unique(level=timestep_col).values
         timesteps_in_year = np.sort(np.unique(timesteps_in_year))
         
+        
         for tt, tstep in enumerate(timesteps_in_year):
             # Make per-tstep dataframes
             x_tt_df = x_df.loc[idx[:, tstep], :].copy()
@@ -150,17 +153,31 @@ def make_x_y_i_data_with_filled_context(
                 WW = tstep - L
             else:
                 WW = W
-            # Grab current tstep's history from outcomes at previous tsteps
-            xhist_N = y_df.loc[idx[:, tstep-(WW+L-1):(tstep-L)], outcome_col].values.copy()
+            
+            if fine_exp:
+                final_tstep = (tstep-L) - ((tstep-L) % 4)
+                absolute_beginning = final_tstep - W + 1
+                initial_tstep = min(tstep-(WW+L-1), absolute_beginning) if absolute_beginning > 0 else tstep-(WW+L-1) #for initial tstep
+                WW = WW - (WW % 4) #take off the last couple timesteps to be fair
+                xhist_N = y_df.loc[idx[:, initial_tstep:final_tstep], outcome_col].values.copy()
+            else:
+                #carry out normal lookback period
+                xhist_N = y_df.loc[idx[:, tstep-(WW+L-1):(tstep-L)], outcome_col].values.copy()
+
             N = xhist_N.shape[0]
             M = N // WW
+            #print(N, M, WW)
             xhist_MW = xhist_N.reshape((M, WW))
             if WW < W:
                 xhist_MW = np.hstack([ np.zeros((M, W-WW)), xhist_MW])
             assert xhist_MW.shape[1] == W
             for ww in range(W):
                 x_tt_df[new_col_names[ww]] = xhist_MW[:, ww]
-                
+            
+            x_tt_df.to_csv(f'make_xy_split_dfs/x/x_{tt}.csv', index=False)
+            y_tt_df.to_csv(f'make_xy_split_dfs/y/y_{tt}.csv', index=False)
+            info_tt_df.to_csv(f'make_xy_split_dfs/info/info_{tt}.csv', index=False)
+
             xs.append(x_tt_df)
             ys.append(y_tt_df)
             infos.append(info_tt_df)

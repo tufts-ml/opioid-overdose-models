@@ -10,6 +10,13 @@ import pipelines
 from pipelines import LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr, GPRegr, ZeroPred
 from metrics import fast_bpr
 
+def transform_to_long(yhat, c):
+    '''
+    Expand list to fit data
+    '''
+    return np.repeat((yhat / c), c)
+
+
 def calc_score(model, x_df, y_df, metric, x_fine_df = None, y_fine_df = None, c=-1):
     if c == -1:
         return calc_score_dict(model, x_df, y_df, '')[metric]
@@ -57,11 +64,9 @@ def calc_split_score_dict(model, x_coarse_df, y_coarse_df, x_fine_df, y_fine_df,
     yhat_df.index = y_coarse_df.index
     year_full_concat = pd.concat([y_coarse_df, yhat_df], axis=1)
     year_full_concat_updated = pd.DataFrame(columns = ['y_death_pred'])
-    #get coarse timestep table ready to 
+    #year_full_concat.to_csv("yearly_without_transform.csv")
 
     for index, row in year_full_concat.iterrows():
-        #expand each coarse row in the dataframe into c new rows by timestep
-        #example: yearly df, each single row will become 4 new rows for a quarterly df
         row['timestep'] = index[1] * c - (c - 1)
         row['y_death_pred'] = row['y_death_pred'] / c
         row['geoid'] = index[0]
@@ -79,12 +84,17 @@ def calc_split_score_dict(model, x_coarse_df, y_coarse_df, x_fine_df, y_fine_df,
    
     # BPR is calculated annually
     # get timesteps from x_df's index
+    #year_full_concat_updated.drop('deaths', inplace=True)
     timesteps = x_fine_df.index.get_level_values(timestep_col).unique()
 
     bpr_each_timestep = []
     for timestep in timesteps:
+
         ytrue_t = y_fine_df[y_fine_df.index.get_level_values(timestep_col) == timestep]
         yhat_t = year_full_concat_updated[year_full_concat_updated.index.get_level_values(timestep_col) == timestep]['y_death_pred']
+        #ytrue_t.to_csv("val_testing/bpr_input_just_ytrue.csv")
+        #yhat_t.to_csv("val_testing/bpr_input_just_yhat.csv")
+        #pd.concat([ytrue_t, yhat_t], axis=1).to_csv("val_testing/bpr_input_side_by_side.csv")
         bpr_t = fast_bpr(pd.Series(np.squeeze(ytrue_t.values)), pd.Series(np.squeeze(yhat_t.values)), K=100)
         bpr_each_timestep.append(bpr_t)
 
@@ -199,13 +209,12 @@ def calc_split_score_dict_uncertainty(model, x_coarse_df, y_coarse_df, x_fine_df
     
     yhat = model.predict(x_coarse_df)
     yhat_df = pd.DataFrame({'y_death_pred': yhat})
-    yhat_df.index = y_coarse_df.index #get coarse df ready for transform
+    yhat_df.index = y_coarse_df.index
 
     full_concat_coarse = pd.concat([y_coarse_df, yhat_df], axis=1)
     full_concat_fine = pd.DataFrame(columns = ['y_death_pred'])
     
     for index, row in full_concat_coarse.iterrows():
-        #same as calc_split_score_dict: expand each row into c new rows
         row['timestep'] = index[1] * c - (c - 1)
         row['y_death_pred'] = row['y_death_pred'] / c
         row['geoid'] = index[0]
@@ -404,7 +413,8 @@ if __name__ == '__main__':
         timestep_col=timestep_col,
         add_space=args.add_space,
         add_time=args.add_time,
-        add_svi=args.add_svi)
+        add_svi=args.add_svi,
+        fine_exp=True)
 
     added_cols = []
     if args.add_space:
