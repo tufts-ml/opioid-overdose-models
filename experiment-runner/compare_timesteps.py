@@ -8,9 +8,13 @@ import copy
 
 def run_tstep_df_creation(tstep, data_dir):
     if not os.path.exists(data_dir + f'/cook_county_gdf_cleanwithsvi_{tstep}.csv'):
-        # execute command in shell to create necessary dfs
-        command = f'python ../cook-county/cleaning-cook-county/cook_county_total_script.py --str_tsteps {tstep} --data_dir {data_dir}'
-        subprocess.run(command, shell=True)
+        try:
+            tstep_num = int(tstep)
+            command = f'python ../cook-county/cleaning-cook-county/cook_county_total_script.py --custom_timestep_range {tstep} --data_dir {data_dir}'
+            subprocess.run(command, shell=True)
+        except ValueError:
+            command = f'python ../cook-county/cleaning-cook-county/cook_county_total_script.py --str_tsteps {tstep} --data_dir {data_dir}'
+            subprocess.run(command, shell=True)
 
     else:
         print(f'path exists to tstep {tstep}')
@@ -115,10 +119,10 @@ if __name__=='__main__':
     
     row_Wmax_dict['cook'] = {0: 1,
                      1: 1,
-                     2: 5,
-                     3: 5,
-                     4: 5,
-                     5: 5,
+                     2: 12,
+                     3: 12,
+                     4: 12,
+                     5: 12,
                      6: 5,
                      7: 1,}
     

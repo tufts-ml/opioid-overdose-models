@@ -10,12 +10,6 @@ import pipelines
 from pipelines import LastYear, LastWYears_Average, PoissonRegr, LinearRegr, GBTRegr, GPRegr, ZeroPred
 from metrics import fast_bpr
 
-def transform_to_long(yhat, c):
-    '''
-    Expand list to fit data
-    '''
-    return np.repeat((yhat / c), c)
-
 
 def calc_score(model, x_df, y_df, metric, x_fine_df = None, y_fine_df = None, c=-1):
     if c == -1:
@@ -114,7 +108,7 @@ def calc_split_score_dict(model, x_coarse_df, y_coarse_df, x_fine_df, y_fine_df,
 def calc_score_dict_uncertainty(model, x_df, y_df, split_name,
                                 timestep_col='timestep', geography_col='geoid',
                                 uncertainty_samples=100, K=100,
-                                seed=360, removed_locations=250):
+                                seed=360, removed_locations=100):
     ytrue = y_df.values
     yhat = model.predict(x_df)
 
@@ -205,7 +199,7 @@ def calc_split_score_dict_uncertainty(model, x_coarse_df, y_coarse_df, x_fine_df
                                       split_name, c,
                                 timestep_col='timestep', geography_col='geoid',
                                 uncertainty_samples=100, K=100,
-                                seed=360, removed_locations=250):
+                                seed=360, removed_locations=100):
     
     yhat = model.predict(x_coarse_df)
     yhat_df = pd.DataFrame({'y_death_pred': yhat})
@@ -414,7 +408,8 @@ if __name__ == '__main__':
         add_space=args.add_space,
         add_time=args.add_time,
         add_svi=args.add_svi,
-        fine_exp=True)
+        fine_exp=True,
+        c=c)
 
     added_cols = []
     if args.add_space:
@@ -473,7 +468,7 @@ if __name__ == '__main__':
         df.to_csv(best_result_path, index=False)
 
         paper_result_strings = f"{te_score_dict['bpr_mean']*100:.1f}, ({te_score_dict['bpr_lower']*100:.1f}- {te_score_dict['bpr_upper']*100:.1f})    " \
-                            f"{te_score_dict['deaths_reached_mean']:.1f}    " \
+                            f"{te_score_dict['deaths_reached_mean']:.1f}, ({te_score_dict['deaths_reached_lower']:.1f}- {te_score_dict['deaths_reached_upper']:.1f})    " \
                             f"{te_score_dict['mae_mean']:.2f}, ({te_score_dict['mae_lower']:.2f}- {te_score_dict['mae_upper']:.2f})    " \
                             f"{te_score_dict['rmse_mean']:.2f}, ({te_score_dict['rmse_lower']:.2f}- {te_score_dict['rmse_upper']:.2f})    "
         print(f'regular {args.shorter_tstep} metrics')
@@ -577,7 +572,7 @@ if __name__ == '__main__':
         te_score_dict = calc_split_score_dict_uncertainty(best_model, te_coarse.x, te_coarse.y, te.x, te.y, 'test', c=c)
 
         paper_result_strings = f"{te_score_dict['bpr_mean']*100:.1f}, ({te_score_dict['bpr_lower']*100:.1f}- {te_score_dict['bpr_upper']*100:.1f})    " \
-                            f"{te_score_dict['deaths_reached_mean']:.1f}    " \
+                            f"{te_score_dict['deaths_reached_mean']:.1f}, ({te_score_dict['deaths_reached_lower']:.1f}- {te_score_dict['deaths_reached_upper']:.1f})    " \
                             f"{te_score_dict['mae_mean']:.2f}, ({te_score_dict['mae_lower']:.2f}- {te_score_dict['mae_upper']:.2f})    " \
                             f"{te_score_dict['rmse_mean']:.2f}, ({te_score_dict['rmse_lower']:.2f}- {te_score_dict['rmse_upper']:.2f})    "
         print('longer tstep baseline metrics')

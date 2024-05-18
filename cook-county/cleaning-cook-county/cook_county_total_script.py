@@ -467,14 +467,14 @@ if __name__ == '__main__':
             'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
             'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
     
-        cook_county_gdf_custom.to_csv(f'{data_dir}/cook_county_gdf_intro_custom_{str(args.custom_timestep_range)}.csv', index=False)
-        csv_path = os.path.join(data_dir, f'cook_county_gdf_intro_custom_{str(args.custom_timestep_range)}.csv')
+        cook_county_gdf_custom.to_csv(f'{data_dir}/cook_county_gdf_intro_{str(args.custom_timestep_range)}.csv', index=False)
+        csv_path = os.path.join(data_dir, f'cook_county_gdf_intro_{str(args.custom_timestep_range)}.csv')
         cook_county_gdf_custom = pd.read_csv(csv_path) 
         gdf_custom = clean_gdf(cook_county_gdf_custom, str(custom_timestep))
         gdf_custom.to_csv(csv_path.replace("intro", "clean"), index=False)
-        gdf_custom_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path.replace("intro", "clean")), 'year')
-        gdf_custom_cleanwithsvi.to_csv(f'{data_dir}/cook_county_gdf_cleanwithsvi_custom_{str(args.custom_timestep_range)}.csv', index=False)
-        gdf_custom_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_custom_{str(args.custom_timestep_range)}', index=False)
+        gdf_custom_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path.replace("intro", "clean")), str(args.custom_timestep_range))
+        gdf_custom_cleanwithsvi.to_csv(f'{data_dir}/cook_county_gdf_cleanwithsvi_{str(args.custom_timestep_range)}.csv', index=False)
+        gdf_custom_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_{str(args.custom_timestep_range)}', index=False)
     
     for tstep in str_timesteps:
         tstep_dict = {'year': 'year', 'semiannual': 'semiannual', 'quarterly': 'quarter', 'monthly': 'month', 'biweekly': 'biweek', 'weekly': 'week'}
@@ -501,61 +501,50 @@ if __name__ == '__main__':
         gdf_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_{tstep}', index=False)
     #subset columns that are relevant on non-individual level basis
 
-    #This section creates the string-based dataframes
-    #Currently has just year, semiannual, and quarterly to completion, but can easily add 
-    #monthly, biweekly, and weekly
 
-    cook_county_gdf_year = cook_county_gdf.loc[:, ['year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
+    # cook_county_gdf_semiannual = cook_county_gdf.loc[:, ['semiannual','year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
+    #     'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
+    #     'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
 
-    cook_county_gdf_semiannual = cook_county_gdf.loc[:, ['semiannual','year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
-    
-    cook_county_gdf_quarterly = cook_county_gdf.loc[:, ['quarter', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
+    # cook_county_gdf_monthly = cook_county_gdf.loc[:, ['month', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
+    #     'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
+    #     'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
 
-    cook_county_gdf_monthly = cook_county_gdf.loc[:, ['month', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
+    # cook_county_gdf_biweekly = cook_county_gdf.loc[:, ['biweek', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
+    #     'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
+    #     'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
 
-    cook_county_gdf_biweekly = cook_county_gdf.loc[:, ['biweek', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
+    # cook_county_gdf_weekly = cook_county_gdf.loc[:, ['week', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
+    #     'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
+    #     'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
 
-    cook_county_gdf_weekly = cook_county_gdf.loc[:, ['week', 'year', 'STATEFP', 'COUNTYFP', 'TRACTCE',
-        'geoid', 'NAME', 'NAMELSAD', 'MTFCC', 'FUNCSTAT', 'ALAND', 'AWATER',
-        'INTPTLAT', 'INTPTLON', 'geometry', 'deaths' ]]
+    # cook_county_gdf_year.to_csv(f'{data_dir}/script_cook_county_gdf_intro_year.csv', index=False)
+    # cook_county_gdf_quarterly.to_csv(f'{data_dir}/script_cook_county_gdf_intro_quarterly.csv', index=False)
+    # cook_county_gdf_semiannual.to_csv(f'{data_dir}/script_cook_county_gdf_intro_semiannual.csv', index=False)
 
-    cook_county_gdf_year.to_csv(f'{data_dir}/cook_county_gdf_intro_year.csv', index=False)
-    cook_county_gdf_quarterly.to_csv(f'{data_dir}/cook_county_gdf_intro_quarterly.csv', index=False)
-    cook_county_gdf_semiannual.to_csv(f'{data_dir}/cook_county_gdf_intro_semiannual.csv', index=False)
+    # csv_path_year = os.path.join(data_dir, 'script_cook_county_gdf_intro_year.csv')
+    # cook_county_gdf_year = pd.read_csv(csv_path_year) 
+    # csv_path_semi = os.path.join(data_dir, 'script_cook_county_gdf_intro_semiannual.csv')
+    # cook_county_gdf_semiannual = pd.read_csv(csv_path_semi) 
+    # csv_path_q = os.path.join(data_dir, 'script_cook_county_gdf_intro_quarterly.csv')
+    # cook_county_gdf_quarterly = pd.read_csv(csv_path_q) 
 
-    csv_path_year = os.path.join(data_dir, 'cook_county_gdf_intro_year.csv')
-    cook_county_gdf_year = pd.read_csv(csv_path_year) 
-    csv_path_semi = os.path.join(data_dir, 'cook_county_gdf_intro_semiannual.csv')
-    cook_county_gdf_semiannual = pd.read_csv(csv_path_semi) 
-    csv_path_q = os.path.join(data_dir, 'cook_county_gdf_intro_quarterly.csv')
-    cook_county_gdf_quarterly = pd.read_csv(csv_path_q) 
+    # gdf_annual = clean_gdf(cook_county_gdf_year, 'year')
+    # gdf_semiannual = clean_gdf(cook_county_gdf_semiannual, 'semiannual')
+    # gdf_quarter = clean_gdf(cook_county_gdf_quarterly, 'quarter')
 
-    gdf_annual = clean_gdf(cook_county_gdf_year, 'year')
-    gdf_semiannual = clean_gdf(cook_county_gdf_semiannual, 'semiannual')
-    gdf_quarter = clean_gdf(cook_county_gdf_quarterly, 'quarter')
+    # gdf_annual.to_csv(csv_path_year.replace("intro", "clean"), index=False)
+    # gdf_semiannual.to_csv(csv_path_semi.replace("intro", "clean"), index=False)
+    # gdf_quarter.to_csv(csv_path_q.replace("intro", "clean"), index=False)
 
-    gdf_annual.to_csv(csv_path_year.replace("intro", "clean"), index=False)
-    gdf_semiannual.to_csv(csv_path_semi.replace("intro", "clean"), index=False)
-    gdf_quarter.to_csv(csv_path_q.replace("intro", "clean"), index=False)
+    # gdf_annual_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_year.replace("intro", "clean")), 'year')
+    # gdf_semiannual_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_semi.replace("intro", "clean")), 'semiannual')
+    # gdf_quarter_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_q.replace("intro", "clean")), 'quarter')
 
-    gdf_annual_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_year.replace("intro", "clean")), 'year')
-    gdf_semiannual_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_semi.replace("intro", "clean")), 'semiannual')
-    gdf_quarter_cleanwithsvi = clean_with_svi(pd.read_csv(csv_path_q.replace("intro", "clean")), 'quarter')
+    # gdf_annual_cleanwithsvi.to_csv(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_year.csv', index=False)
+    # gdf_semiannual_cleanwithsvi.to_csv(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_semiannual.csv', index=False)
+    # gdf_quarter_cleanwithsvi.to_csv(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_quarterly.csv', index=False)
 
-    gdf_annual_cleanwithsvi.to_csv(f'{data_dir}/cook_county_gdf_cleanwithsvi_year.csv', index=False)
-    gdf_semiannual_cleanwithsvi.to_csv(f'{data_dir}/cook_county_gdf_cleanwithsvi_semiannual.csv', index=False)
-    gdf_quarter_cleanwithsvi.to_csv(f'{data_dir}/cook_county_gdf_cleanwithsvi_quarterly.csv', index=False)
-
-    gdf_annual_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_year', index=False)
-    gdf_semiannual_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_semiannual', index=False)
-    gdf_quarter_cleanwithsvi.to_file(f'{data_dir}/cook_county_gdf_cleanwithsvi_quarterly', index=False)
+    # gdf_annual_cleanwithsvi.to_file(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_year', index=False)
+    # gdf_semiannual_cleanwithsvi.to_file(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_semiannual', index=False)
+    # gdf_quarter_cleanwithsvi.to_file(f'{data_dir}/script_cook_county_gdf_cleanwithsvi_quarterly', index=False)

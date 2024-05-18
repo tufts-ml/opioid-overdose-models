@@ -22,7 +22,7 @@ def make_outcome_history_feat_names(W, outcome_col='deaths'):
 def load_xy_splits(
         data_dir = os.environ.get('DATA_DIR'),
         timescale='year',
-        csv_pattern_str='cook_county_gdf_cleanwithsvi_{timescale}.csv',
+        csv_pattern_str='cook_county_gdf_cleanwithsvi_{timescale}',
         timestep_col='timestep',
         geography_col='geoid',
         outcome_col='deaths',
@@ -37,9 +37,9 @@ def load_xy_splits(
         add_time=True,
         add_svi=True,
         fine_exp=False,
+        c=-1,
         **kwargs
         ):
-
     all_df = gpd.read_file(os.path.join(data_dir, csv_pattern_str.format(timescale=timescale)))
 
     x_cols_only = []
@@ -68,7 +68,7 @@ def load_xy_splits(
     assert np.max(va_years) < np.min(te_years)
     W = int(context_size_in_tsteps)
 
-    kws = dict(fine_exp=fine_exp, timestep_col=timestep_col,
+    kws = dict(fine_exp=fine_exp, c=c, timestep_col=timestep_col,
         year_col=year_col, outcome_col=outcome_col, 
         **kwargs)
     tr_tup = make_x_y_i_data_with_filled_context(
@@ -84,8 +84,7 @@ def load_xy_splits(
 def make_x_y_i_data_with_filled_context(
         x_df, y_df, info_df,
         first_year, last_year,
-        context_size_in_tsteps, fine_exp=False,
-        lag_in_tsteps=1,
+        context_size_in_tsteps, fine_exp=False, c=-1, lag_in_tsteps=1,
         how_to_handle_tstep_without_enough_context='raise_error',
         year_col='year', timestep_col='timestep', outcome_col='deaths'):
     """ Create x,y,i dataframes suitable for supervised learning
@@ -154,11 +153,11 @@ def make_x_y_i_data_with_filled_context(
             else:
                 WW = W
             
-            if fine_exp:
-                final_tstep = (tstep-L) - ((tstep-L) % 4)
+            if fine_exp: #if we are comparing two timesteps, need to be fair
+                final_tstep = (tstep-L) - ((tstep-L) % c)
                 absolute_beginning = final_tstep - W + 1
                 initial_tstep = min(tstep-(WW+L-1), absolute_beginning) if absolute_beginning > 0 else tstep-(WW+L-1) #for initial tstep
-                WW = WW - (WW % 4) #take off the last couple timesteps to be fair
+                WW = WW - (WW % c) #take off the last c timesteps to be fair (e.g 4 years, max of 16 quarters, so shave off extra for 17-19 quarter count)
                 xhist_N = y_df.loc[idx[:, initial_tstep:final_tstep], outcome_col].values.copy()
             else:
                 #carry out normal lookback period
