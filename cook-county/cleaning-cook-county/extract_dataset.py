@@ -7,7 +7,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--steps_to_run', default='1,2,3,4,5', type=str)
     args = parser.parse_args()
-
+    os.environ['DATA_DIR'] = 'data_dir'
     data_dir = os.environ.get('DATA_DIR', None)
     if data_dir is None or not os.path.exists(data_dir):
         raise ValueError("Please set DATA_DIR")
