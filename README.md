@@ -2,10 +2,10 @@
 
 This is code for the published paper:
 
-*Spatiotemporal Forecasting of Opioid-related Fatal Overdoses: Towards Best Practices for Modeling and Evaluation*
-Kyle Heuton, Jyontika Kapoor, Shikhar Shrestha, Thomas J Stopka, Michael C. Hughes
-American Journal of Epidemiology, 2024
-<https://doi.org/10.1093/aje/kwae343>
+> *Spatiotemporal Forecasting of Opioid-related Fatal Overdoses: Towards Best Practices for Modeling and Evaluation* <br />
+> Kyle Heuton, Jyontika Kapoor, Shikhar Shrestha, Thomas J Stopka, Michael C. Hughes <br />
+> American Journal of Epidemiology, 2024 <br />
+> <https://doi.org/10.1093/aje/kwae343>
 
 ## Data
 
