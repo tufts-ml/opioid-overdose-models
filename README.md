@@ -7,6 +7,8 @@ This is code for the published paper:
 > American Journal of Epidemiology, 2024 <br />
 > <https://doi.org/10.1093/aje/kwae343>
 
+Please get in touch with Kyle Heuton if you have questions.
+
 ## Data
 
 ### Cook County
